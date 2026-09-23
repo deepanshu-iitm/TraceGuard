@@ -7,7 +7,6 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from backend.data.case_pack import DATA_DIR
 from backend.graph.cards import (
     CardTuple,
     assign_card_ids,
@@ -15,7 +14,9 @@ from backend.graph.cards import (
     labeled_txn_card_ids,
 )
 
+DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 RAW_DIR = DATA_DIR / "raw"
+
 PROCESSED_DIR = DATA_DIR / "processed"
 GRAPH_FILES = frozenset(
     {
@@ -317,7 +318,11 @@ def _write(path: Path, header: list[str], rows: list[tuple]) -> None:
 
 
 if __name__ == "__main__":
-    from backend.data import load_case_pack
+    import csv
 
-    output = export_graph(customer_ids={item.customer_id for item in load_case_pack()})
+    customer_ids: set[str] = set()
+    with (DATA_DIR / "case_pack.csv").open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            customer_ids.add(row["customer_id"])
+    output = export_graph(customer_ids=customer_ids)
     print(f"wrote {output}")
