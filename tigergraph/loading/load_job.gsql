@@ -1,0 +1,29 @@
+CREATE LOADING JOB load_fraud_graph FOR GRAPH FraudGraph {
+  DEFINE FILENAME customers;
+  DEFINE FILENAME cards;
+  DEFINE FILENAME transactions;
+  DEFINE FILENAME devices;
+  DEFINE FILENAME emails;
+  DEFINE FILENAME regions;
+  DEFINE FILENAME closed_cases;
+  DEFINE FILENAME edges;
+
+  LOAD customers TO VERTEX Customer VALUES ($"id") USING header="true", separator=",";
+  LOAD cards TO VERTEX Card VALUES ($"id", $"card1", $"network", $"card_type") USING header="true", separator=",";
+  LOAD transactions TO VERTEX Transaction VALUES ($"id", $"ts", $"amount", $"product_cd", $"channel", $"risk_score", $"billing_region", $"billing_country") USING header="true", separator=",";
+  LOAD devices TO VERTEX DeviceProfile VALUES ($"id", $"device_type", $"device_info", $"os", $"browser", $"screen") USING header="true", separator=",";
+  LOAD emails TO VERTEX EmailDomain VALUES ($"id") USING header="true", separator=",";
+  LOAD regions TO VERTEX BillingRegion VALUES ($"id", $"country") USING header="true", separator=",";
+  LOAD closed_cases TO VERTEX ClosedCase VALUES ($"id", $"opened_at", $"closed_at", $"outcome", $"pattern", $"exposure_usd", $"n_txns", $"report_filed", $"analyst_notes") USING header="true", separator=",";
+
+  LOAD edges TO EDGE OWNS VALUES ($"from_id", $"to_id") WHERE $"edge_type" == "owns" USING header="true", separator=",";
+  LOAD edges TO EDGE MADE VALUES ($"from_id", $"to_id") WHERE $"edge_type" == "made" USING header="true", separator=",";
+  LOAD edges TO EDGE FROM_DEVICE VALUES ($"from_id", $"to_id") WHERE $"edge_type" == "from_device" USING header="true", separator=",";
+  LOAD edges TO EDGE PURCHASER_EMAIL VALUES ($"from_id", $"to_id") WHERE $"edge_type" == "purchaser_email" USING header="true", separator=",";
+  LOAD edges TO EDGE RECIPIENT_EMAIL VALUES ($"from_id", $"to_id") WHERE $"edge_type" == "recipient_email" USING header="true", separator=",";
+  LOAD edges TO EDGE BILLED_IN VALUES ($"from_id", $"to_id") WHERE $"edge_type" == "billed_in" USING header="true", separator=",";
+  LOAD edges TO EDGE NEXT VALUES ($"from_id", $"to_id") WHERE $"edge_type" == "next" USING header="true", separator=",";
+  LOAD edges TO EDGE INVOLVES VALUES ($"from_id", $"to_id") WHERE $"edge_type" == "involves" USING header="true", separator=",";
+  LOAD edges TO EDGE ON_CARD VALUES ($"from_id", $"to_id") WHERE $"edge_type" == "on_card" USING header="true", separator=",";
+  LOAD edges TO EDGE CONNECTED_TO VALUES ($"from_id", $"to_id") WHERE $"edge_type" == "connected_to" USING header="true", separator=",";
+}
