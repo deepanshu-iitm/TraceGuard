@@ -1,17 +1,19 @@
 USE GLOBAL
 
+DROP VERTEX Customer
+
 CREATE VERTEX Customer (
   PRIMARY_ID id STRING
 )
 
-CREATE VERTEX Card (
+CREATE VERTEX PaymentCard (
   PRIMARY_ID id STRING,
   card1 STRING,
   network STRING,
   card_type STRING
 )
 
-CREATE VERTEX Transaction (
+CREATE VERTEX CardTransaction (
   PRIMARY_ID id STRING,
   ts DATETIME,
   amount DOUBLE,
@@ -64,26 +66,26 @@ CREATE VERTEX InvestigationCase (
   stop_reason STRING
 )
 
-CREATE DIRECTED EDGE OWNS (FROM Customer, TO Card)
-CREATE DIRECTED EDGE MADE (FROM Card, TO Transaction)
-CREATE DIRECTED EDGE FROM_DEVICE (FROM Transaction, TO DeviceProfile)
-CREATE DIRECTED EDGE PURCHASER_EMAIL (FROM Transaction, TO EmailDomain)
-CREATE DIRECTED EDGE RECIPIENT_EMAIL (FROM Transaction, TO EmailDomain)
-CREATE DIRECTED EDGE BILLED_IN (FROM Transaction, TO BillingRegion)
-CREATE DIRECTED EDGE NEXT (FROM Transaction, TO Transaction)
-CREATE DIRECTED EDGE INVOLVES (FROM ClosedCase, TO Transaction)
-CREATE DIRECTED EDGE ON_CARD (FROM ClosedCase, TO Card)
-CREATE DIRECTED EDGE CONNECTED_TO (FROM ClosedCase, TO Card)
+CREATE DIRECTED EDGE OWNS (FROM Customer, TO PaymentCard)
+CREATE DIRECTED EDGE MADE (FROM PaymentCard, TO CardTransaction)
+CREATE DIRECTED EDGE FROM_DEVICE (FROM CardTransaction, TO DeviceProfile)
+CREATE DIRECTED EDGE PURCHASER_EMAIL (FROM CardTransaction, TO EmailDomain)
+CREATE DIRECTED EDGE RECIPIENT_EMAIL (FROM CardTransaction, TO EmailDomain)
+CREATE DIRECTED EDGE BILLED_IN (FROM CardTransaction, TO BillingRegion)
+CREATE DIRECTED EDGE NEXT (FROM CardTransaction, TO CardTransaction)
+CREATE DIRECTED EDGE INVOLVES (FROM ClosedCase, TO CardTransaction)
+CREATE DIRECTED EDGE ON_CARD (FROM ClosedCase, TO PaymentCard)
+CREATE DIRECTED EDGE CONNECTED_TO (FROM ClosedCase, TO PaymentCard)
 CREATE DIRECTED EDGE CASE_FOR_CUSTOMER (FROM InvestigationCase, TO Customer)
-CREATE DIRECTED EDGE CASE_INVOLVES (FROM InvestigationCase, TO Transaction)
-CREATE DIRECTED EDGE CASE_ON_CARD (FROM InvestigationCase, TO Card)
-CREATE DIRECTED EDGE CASE_CONNECTED_TO (FROM InvestigationCase, TO Card)
+CREATE DIRECTED EDGE CASE_INVOLVES (FROM InvestigationCase, TO CardTransaction)
+CREATE DIRECTED EDGE CASE_ON_CARD (FROM InvestigationCase, TO PaymentCard)
+CREATE DIRECTED EDGE CASE_CONNECTED_TO (FROM InvestigationCase, TO PaymentCard)
 CREATE DIRECTED EDGE CASE_MATCHES (FROM InvestigationCase, TO ClosedCase)
 
 CREATE GRAPH FraudGraph (
   Customer,
-  Card,
-  Transaction,
+  PaymentCard,
+  CardTransaction,
   DeviceProfile,
   EmailDomain,
   BillingRegion,

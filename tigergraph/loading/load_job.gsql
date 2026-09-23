@@ -9,8 +9,8 @@ CREATE LOADING JOB load_fraud_graph FOR GRAPH FraudGraph {
   DEFINE FILENAME edges;
 
   LOAD customers TO VERTEX Customer VALUES ($"id") USING header="true", separator=",";
-  LOAD cards TO VERTEX Card VALUES ($"id", $"card1", $"network", $"card_type") USING header="true", separator=",";
-  LOAD transactions TO VERTEX Transaction VALUES ($"id", $"ts", $"amount", $"product_cd", $"channel", $"risk_score", $"billing_region", $"billing_country") USING header="true", separator=",";
+  LOAD cards TO VERTEX PaymentCard VALUES ($"id", $"card1", $"network", $"card_type") USING header="true", separator=",";
+  LOAD transactions TO VERTEX CardTransaction VALUES ($"id", $"ts", $"amount", $"product_cd", $"channel", $"risk_score", $"billing_region", $"billing_country") USING header="true", separator=",";
   LOAD devices TO VERTEX DeviceProfile VALUES ($"id", $"device_type", $"device_info", $"os", $"browser", $"screen") USING header="true", separator=",";
   LOAD emails TO VERTEX EmailDomain VALUES ($"id") USING header="true", separator=",";
   LOAD regions TO VERTEX BillingRegion VALUES ($"id", $"country") USING header="true", separator=",";
