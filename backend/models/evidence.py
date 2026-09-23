@@ -1,11 +1,11 @@
 """Investigation evidence domain model."""
 
-from enum import StrEnum
+from enum import Enum
 
 from pydantic import BaseModel
 
 
-class EvidenceSource(StrEnum):
+class EvidenceSource(str, Enum):
     """Sources from which investigation evidence can originate."""
 
     GRAPH = "graph"

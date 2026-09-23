@@ -1,9 +1,9 @@
 """TraceGuard domain enumerations."""
 
-from enum import StrEnum
+from enum import Enum
 
 
-class CaseStatus(StrEnum):
+class CaseStatus(str, Enum):
     """Investigation case lifecycle states."""
 
     OPEN = "open"
@@ -12,7 +12,7 @@ class CaseStatus(StrEnum):
     ESCALATED = "escalated"
 
 
-class TriggerType(StrEnum):
+class TriggerType(str, Enum):
     """Reasons an investigation case is opened."""
 
     RISK_SCORE = "risk_score"
@@ -20,7 +20,7 @@ class TriggerType(StrEnum):
     ANALYST_REQUEST = "analyst_request"
 
 
-class FraudPattern(StrEnum):
+class FraudPattern(str, Enum):
     """Fraud patterns recognized in the answer format."""
 
     CARD_TESTING = "card_testing"

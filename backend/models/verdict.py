@@ -1,13 +1,13 @@
 """Investigation verdict domain model."""
 
-from enum import StrEnum
+from enum import Enum
 
 from pydantic import BaseModel
 
 from backend.models.enums import FraudPattern
 
 
-class Verdict(StrEnum):
+class Verdict(str, Enum):
     """Possible investigation outcomes."""
 
     FRAUD = "fraud"
