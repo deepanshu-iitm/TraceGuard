@@ -6,6 +6,7 @@ from backend.policy.rules import (
     RecommendedAction,
     recommend_actions,
 )
+from backend.policy.stopping import StopDecision, StopSnapshot, stop_decision
 
 __all__ = [
     "ApprovalRoute",
@@ -13,6 +14,9 @@ __all__ = [
     "PolicyAction",
     "PolicySnapshot",
     "RecommendedAction",
+    "StopDecision",
+    "StopSnapshot",
     "approval_route",
     "recommend_actions",
+    "stop_decision",
 ]
