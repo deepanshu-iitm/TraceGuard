@@ -1,0 +1,116 @@
+{
+  "case_id": "HHG-001",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.12,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0.0,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3514030 is a 77.07 USD in-person product-W purchase in billing region 444.0 (country 87.0) on 2016-12-04 19:55:28. Card C12382-K1 is a visa debit owned by C12382; the customer has no second card and this channel is in_person, so there is no device profile.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3514030)",
+        "entity_ids": [
+          "3514030",
+          "C12382-K1",
+          "C12382"
+        ]
+      },
+      {
+        "claim": "Region 444.0 is not new for this card. Ten in-person purchases in 444.0 occurred before the alert, from 2016-09-13 through 2016-11-26, including two recent amounts of 76.94 and 77.08 USD that match the flagged 77.07 USD.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C12382-K1, region=444.0)",
+        "entity_ids": [
+          "3264155",
+          "3275900",
+          "3276102",
+          "3320680",
+          "3356278",
+          "3376974",
+          "3400970",
+          "3441958",
+          "3471020",
+          "3490282",
+          "3514030"
+        ]
+      },
+      {
+        "claim": "Closed cases on this card are a different pattern: CC-1066, CC-2964, and CC-3587 were card-present fraud in region 205.0, and CC-1673 was an online iOS new-device purchase. The flagged transaction does not match those episodes.",
+        "source": "graph",
+        "ref": "query:closed_cases(card_id=C12382-K1)",
+        "entity_ids": [
+          "CC-1066",
+          "CC-1673",
+          "CC-2964",
+          "CC-3587",
+          "3090135",
+          "3140508",
+          "3226855",
+          "3271314"
+        ]
+      },
+      {
+        "claim": "Customer confirmed they made the 77.07 USD in-person purchase in billing region 444.0 and still have the card.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1066",
+      "CC-1673",
+      "CC-2964",
+      "CC-3587"
+    ],
+    "summary": "HHG-001 is a risk-score alert on a 77.07 USD in-person purchase in billing region 444.0, a region this visa debit has used ten times since September, at amounts that already cluster around 59 then 77 USD. Four prior confirmed-fraud cases on the same card were out-of-region use in 205.0 or a new iOS device, not this spend. The customer confirmed the purchase. The model score of 0.61 was the only fraud signal and does not hold.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer confirms they made the 77.07 USD in-person purchase in billing region 444.0 and still have the card."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: the alert is a single risk score of 0.61; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: evidence requested from the customer"
+      }
+    ],
+    "final": [
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: customer confirmed the transaction"
+      }
+    ],
+    "what_changed": "Customer confirmation dropped fraud probability to 0.12 and replaced verification with close as not fraud."
+  },
+  "sar": {
+    "file": false,
+    "reason": "R3: customer confirmed; FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A verification response settled the question (confirm).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 1.4
+}
