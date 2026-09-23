@@ -4,12 +4,14 @@ from enum import StrEnum
 
 from pydantic import BaseModel
 
+from backend.models.enums import FraudPattern
+
 
 class Verdict(StrEnum):
     """Possible investigation outcomes."""
 
     FRAUD = "fraud"
-    NOT_FRAUD = "not_fraud"
+    LEGITIMATE = "legitimate"
     UNCERTAIN = "uncertain"
 
 
@@ -18,5 +20,5 @@ class InvestigationVerdict(BaseModel):
 
     verdict: Verdict
     fraud_probability: float
-    pattern: str
+    pattern: FraudPattern
     pattern_description: str
