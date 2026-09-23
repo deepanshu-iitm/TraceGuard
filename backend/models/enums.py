@@ -12,6 +12,14 @@ class CaseStatus(StrEnum):
     ESCALATED = "escalated"
 
 
+class TriggerType(StrEnum):
+    """Reasons an investigation case is opened."""
+
+    RISK_SCORE = "risk_score"
+    CUSTOMER_REPORT = "customer_report"
+    ANALYST_REQUEST = "analyst_request"
+
+
 class FraudPattern(StrEnum):
     """Fraud patterns recognized in the answer format."""
 
@@ -22,4 +30,3 @@ class FraudPattern(StrEnum):
     ACCOUNT_TAKEOVER = "account_takeover"
     UNDOCUMENTED = "undocumented"
     NONE = "none"
- 
