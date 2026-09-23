@@ -6,6 +6,7 @@ from backend.models.customer import Customer
 from backend.models.enums import CaseStatus
 from backend.models.transaction import Transaction
 from backend.models.verdict import InvestigationVerdict, Verdict
+from backend.models.investigation import InvestigationRequest
 
 __all__ = [
     "Card",
@@ -15,4 +16,5 @@ __all__ = [
     "Transaction",
     "InvestigationVerdict",
     "Verdict",
+    "InvestigationRequest",
 ]
