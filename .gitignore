@@ -14,3 +14,5 @@ build/
 data/transactions.csv
 data/identity.csv
 data/closed_cases_history.csv
+data/raw/*.csv
+data/processed/*.csv
