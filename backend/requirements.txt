@@ -2,3 +2,5 @@ fastapi
 uvicorn[standard]
 pydantic
 pydantic-settings
+httpx2
+pytest
