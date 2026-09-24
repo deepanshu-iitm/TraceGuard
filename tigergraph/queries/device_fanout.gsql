@@ -1,0 +1,14 @@
+USE GRAPH FraudGraph
+
+DROP QUERY device_fanout
+
+CREATE QUERY device_fanout(VERTEX<DeviceProfile> d) FOR GRAPH FraudGraph {
+  SumAccum<INT> @@n_txns;
+  start = {d};
+  txns = SELECT x FROM start:s -(<FROM_DEVICE)- CardTransaction:x
+         POST-ACCUM (x) @@n_txns += 1;
+  cards = SELECT c FROM txns:x -(<MADE)- PaymentCard:c;
+  PRINT d;
+  PRINT @@n_txns;
+  PRINT cards;
+}

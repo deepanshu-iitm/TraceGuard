@@ -1,0 +1,17 @@
+USE GRAPH FraudGraph
+
+DROP QUERY device_degree
+
+CREATE QUERY device_degree(VERTEX<DeviceProfile> d) FOR GRAPH FraudGraph {
+  SumAccum<INT> @@degree;
+  SumAccum<INT> @@n_cards;
+  start = {d};
+  txns = SELECT x FROM start:s -(<FROM_DEVICE)- CardTransaction:x
+         POST-ACCUM (x) @@degree += 1;
+  cards = SELECT c FROM txns:x -(<MADE)- PaymentCard:c
+          POST-ACCUM (c) @@n_cards += 1;
+  PRINT d;
+  PRINT @@degree;
+  PRINT @@n_cards;
+  PRINT cards;
+}

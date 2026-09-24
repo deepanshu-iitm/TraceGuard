@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from operator import add
-from typing import Annotated, TypedDict
+from typing import Annotated, Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
@@ -12,7 +12,14 @@ from backend.config import settings
 from backend.graph.tools import get_graph_tools
 from backend.investigate.compose import compose_answer, decide_investigation
 from backend.investigate.explain import explain_answer
-from backend.investigate.facts import CaseFacts, load_case_facts, merge_shared_cards
+from backend.investigate.facts import (
+    CaseFacts,
+    load_case_facts,
+    merge_email_cards,
+    merge_next_txns,
+    merge_region_cards,
+    merge_shared_cards,
+)
 from backend.investigate.persist import write_investigation_case
 from backend.models.answer import Answer
 from backend.models.enums import FraudPattern
@@ -49,18 +56,54 @@ def _facts(state: InvestigateState) -> dict:
     tools = get_graph_tools()
     live = bool(settings.tg_host.strip())
     calls = 1 if live else 0
-    if not live:
-        tools.run_installed_query("get_case_facts", {"t": facts.flagged.txn_id})
-        calls += 1
-    tools.run_installed_query("investigate_txn", {"t": facts.flagged.txn_id})
-    calls += 1
-    if facts.device_profile_id:
-        shared = tools.run_installed_query(
-            "shared_cards_on_device", {"d": facts.device_profile_id}
-        )
-        facts = merge_shared_cards(facts, shared)
+    for name, params in _selected_tools(facts):
+        if live and name == "get_case_facts":
+            continue
+        payload = _try_query(tools, name, params)
+        if payload is None:
+            continue
+        facts = _apply_tool(facts, name, payload)
         calls += 1
     return {"facts": facts, "tool_calls": calls, "steps": ["facts"]}
+
+
+def _selected_tools(facts: CaseFacts) -> list[tuple[str, dict[str, str]]]:
+    """Choose graph algorithms from the neighborhood, not a fixed three-hop path."""
+    selected: list[tuple[str, dict[str, str]]] = [
+        ("get_case_facts", {"t": facts.flagged.txn_id}),
+        ("investigate_txn", {"t": facts.flagged.txn_id}),
+        ("next_chain", {"t": facts.flagged.txn_id}),
+        ("card_component", {"c": facts.card.card_id}),
+    ]
+    if facts.device_profile_id:
+        selected.append(("shared_cards_on_device", {"d": facts.device_profile_id}))
+        selected.append(("device_fanout", {"d": facts.device_profile_id}))
+        selected.append(("device_degree", {"d": facts.device_profile_id}))
+    email = facts.flagged.recipient_email or facts.flagged.purchaser_email
+    if email:
+        selected.append(("email_fanout", {"e": email}))
+    if facts.flagged.billing_region:
+        selected.append(("region_fanout", {"r": facts.flagged.billing_region}))
+    return selected
+
+
+def _try_query(tools: Any, name: str, params: dict[str, str]) -> list | None:
+    try:
+        return tools.run_installed_query(name, params)
+    except Exception:
+        return None
+
+
+def _apply_tool(facts: CaseFacts, name: str, payload: list) -> CaseFacts:
+    if name in {"shared_cards_on_device", "device_fanout", "device_degree"}:
+        return merge_shared_cards(facts, payload)
+    if name == "email_fanout":
+        return merge_email_cards(facts, payload)
+    if name == "region_fanout":
+        return merge_region_cards(facts, payload)
+    if name == "next_chain":
+        return merge_next_txns(facts, payload)
+    return facts
 
 
 def _policy(state: InvestigateState) -> dict:

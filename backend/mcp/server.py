@@ -41,6 +41,42 @@ def shared_cards_on_device(d: str) -> list:
     return get_graph_tools().run_installed_query("shared_cards_on_device", {"d": d})
 
 
+@mcp.tool(name="email_fanout")
+def email_fanout(e: str) -> list:
+    """Payment cards that share a purchaser or recipient email domain."""
+    return get_graph_tools().run_installed_query("email_fanout", {"e": e})
+
+
+@mcp.tool(name="region_fanout")
+def region_fanout(r: str) -> list:
+    """Payment cards billed in the same region. Informational, not automatic R6."""
+    return get_graph_tools().run_installed_query("region_fanout", {"r": r})
+
+
+@mcp.tool(name="next_chain")
+def next_chain(t: str) -> list:
+    """Follow NEXT edges from a CardTransaction for episode reconstruction."""
+    return get_graph_tools().run_installed_query("next_chain", {"t": t})
+
+
+@mcp.tool(name="device_degree")
+def device_degree(d: str) -> list:
+    """Degree centrality of a DeviceProfile: transaction count and unique cards."""
+    return get_graph_tools().run_installed_query("device_degree", {"d": d})
+
+
+@mcp.tool(name="device_fanout")
+def device_fanout(d: str) -> list:
+    """Cards reached by expanding FROM_DEVICE neighbors of a DeviceProfile."""
+    return get_graph_tools().run_installed_query("device_fanout", {"d": d})
+
+
+@mcp.tool(name="card_component")
+def card_component(c: str) -> list:
+    """Two-hop component around a PaymentCard: devices, emails, linked cards."""
+    return get_graph_tools().run_installed_query("card_component", {"c": c})
+
+
 @mcp.tool(name="get_investigation_case")
 def get_investigation_case(c: str) -> list:
     """Read a persisted InvestigationCase vertex and its graph links."""

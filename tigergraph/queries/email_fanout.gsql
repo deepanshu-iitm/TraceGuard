@@ -1,0 +1,17 @@
+USE GRAPH FraudGraph
+
+DROP QUERY email_fanout
+
+CREATE QUERY email_fanout(VERTEX<EmailDomain> e) FOR GRAPH FraudGraph {
+  SumAccum<INT> @@n_txns;
+  start = {e};
+  purchased = SELECT x FROM start:s -(<PURCHASER_EMAIL)- CardTransaction:x
+              POST-ACCUM (x) @@n_txns += 1;
+  received = SELECT x FROM start:s -(<RECIPIENT_EMAIL)- CardTransaction:x
+             POST-ACCUM (x) @@n_txns += 1;
+  txns = purchased UNION received;
+  cards = SELECT c FROM txns:x -(<MADE)- PaymentCard:c;
+  PRINT e;
+  PRINT @@n_txns;
+  PRINT cards;
+}

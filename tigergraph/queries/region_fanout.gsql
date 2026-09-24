@@ -1,0 +1,14 @@
+USE GRAPH FraudGraph
+
+DROP QUERY region_fanout
+
+CREATE QUERY region_fanout(VERTEX<BillingRegion> r) FOR GRAPH FraudGraph {
+  SumAccum<INT> @@n_txns;
+  start = {r};
+  txns = SELECT x FROM start:s -(<BILLED_IN)- CardTransaction:x
+         POST-ACCUM (x) @@n_txns += 1;
+  cards = SELECT c FROM txns:x -(<MADE)- PaymentCard:c;
+  PRINT r;
+  PRINT @@n_txns;
+  PRINT cards;
+}

@@ -1,0 +1,12 @@
+USE GRAPH FraudGraph
+
+DROP QUERY next_chain
+
+CREATE QUERY next_chain(VERTEX<CardTransaction> t) FOR GRAPH FraudGraph {
+  start = {t};
+  nxt = SELECT x FROM start:s -(NEXT>)- CardTransaction:x;
+  prev = SELECT x FROM start:s -(<NEXT)- CardTransaction:x;
+  PRINT t;
+  PRINT nxt;
+  PRINT prev;
+}

@@ -1,0 +1,22 @@
+USE GRAPH FraudGraph
+
+DROP QUERY card_component
+
+CREATE QUERY card_component(VERTEX<PaymentCard> c) FOR GRAPH FraudGraph {
+  SumAccum<INT> @@n_txns;
+  SumAccum<INT> @@n_devices;
+  start = {c};
+  txns = SELECT x FROM start:s -(MADE>)- CardTransaction:x
+         POST-ACCUM (x) @@n_txns += 1;
+  devices = SELECT d FROM txns:x -(FROM_DEVICE>)- DeviceProfile:d
+            POST-ACCUM (d) @@n_devices += 1;
+  emails = SELECT e FROM txns:x -(PURCHASER_EMAIL>)- EmailDomain:e;
+  device_txns = SELECT x FROM devices:d -(<FROM_DEVICE)- CardTransaction:x;
+  linked = SELECT p FROM device_txns:x -(<MADE)- PaymentCard:p;
+  PRINT c;
+  PRINT @@n_txns;
+  PRINT @@n_devices;
+  PRINT devices;
+  PRINT emails;
+  PRINT linked;
+}

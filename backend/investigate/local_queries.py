@@ -22,6 +22,18 @@ class LocalGraphTools:
             return local_shared_cards(str(params["d"]))
         if name == "get_investigation_case":
             return local_investigation_case(str(params.get("c", "")))
+        if name == "email_fanout":
+            return local_email_fanout(str(params["e"]))
+        if name == "region_fanout":
+            return local_region_fanout(str(params["r"]))
+        if name == "next_chain":
+            return local_next_chain(str(params["t"]))
+        if name == "device_degree":
+            return local_device_degree(str(params["d"]))
+        if name == "device_fanout":
+            return local_shared_cards(str(params["d"]))
+        if name == "card_component":
+            return local_card_component(str(params["c"]))
         raise KeyError(f"unknown installed query: {name}")
 
     def upsert_investigation_case(
@@ -109,6 +121,107 @@ def local_shared_cards(profile: str) -> list[dict[str, Any]]:
         {"d": [{"v_id": profile, "attributes": {}}]},
         {"@@n_txns": n_txns},
         {"cards": [_card_vertex(index.card(card_id)) for card_id in card_ids]},
+    ]
+
+
+def local_email_fanout(domain: str) -> list[dict[str, Any]]:
+    index = _graph_index(PROCESSED_DIR)
+    card_ids = index.cards_by_email.get(domain, ())
+    n_txns = sum(
+        1
+        for txn in index.txns.values()
+        if txn.purchaser_email == domain or txn.recipient_email == domain
+    )
+    return [
+        {"e": [{"v_id": domain, "attributes": {}}]},
+        {"@@n_txns": n_txns},
+        {
+            "cards": [
+                _card_vertex(index.card(card_id))
+                for card_id in card_ids
+                if card_id in index.cards
+            ]
+        },
+    ]
+
+
+def local_region_fanout(region: str, limit: int = 40) -> list[dict[str, Any]]:
+    index = _graph_index(PROCESSED_DIR)
+    card_ids = index.cards_by_region.get(region, ())
+    n_txns = sum(1 for txn in index.txns.values() if txn.billing_region == region)
+    shown = card_ids[:limit]
+    return [
+        {"r": [{"v_id": region, "attributes": {}}]},
+        {"@@n_txns": n_txns},
+        {
+            "cards": [
+                _card_vertex(index.card(card_id))
+                for card_id in shown
+                if card_id in index.cards
+            ]
+        },
+    ]
+
+
+def local_next_chain(txn_id: str) -> list[dict[str, Any]]:
+    index = _graph_index(PROCESSED_DIR)
+    nxt = [
+        _txn_vertex(index.txn(dest))
+        for dest in index.next_txn.get(txn_id, ())
+        if dest in index.txns
+    ]
+    prev = [
+        _txn_vertex(index.txn(src))
+        for src, dests in index.next_txn.items()
+        if txn_id in dests and src in index.txns
+    ]
+    flagged = index.txn(txn_id)
+    return [
+        {"t": [_txn_vertex(flagged)]},
+        {"nxt": nxt},
+        {"prev": prev},
+    ]
+
+
+def local_device_degree(profile: str) -> list[dict[str, Any]]:
+    payload = local_shared_cards(profile)
+    cards = payload[2]["cards"]
+    return [
+        payload[0],
+        {"@@degree": payload[1]["@@n_txns"]},
+        {"@@n_cards": len(cards)},
+        {"cards": cards},
+    ]
+
+
+def local_card_component(card_id: str) -> list[dict[str, Any]]:
+    index = _graph_index(PROCESSED_DIR)
+    card = index.card(card_id)
+    history = [index.txn(item) for item in index.made.get(card_id, ())]
+    devices = sorted({txn.device_profile_id for txn in history if txn.device_profile_id})
+    emails = sorted(
+        {
+            txn.purchaser_email or txn.recipient_email
+            for txn in history
+            if txn.purchaser_email or txn.recipient_email
+        }
+    )
+    linked: set[str] = set()
+    for profile in devices:
+        linked.update(index.cards_by_device.get(profile, ()))
+    return [
+        {"c": [_card_vertex(card)]},
+        {"@@n_txns": len(history)},
+        {"@@n_devices": len(devices)},
+        {"devices": [{"v_id": profile, "attributes": {}} for profile in devices]},
+        {"emails": [{"v_id": domain, "attributes": {}} for domain in emails]},
+        {
+            "linked": [
+                _card_vertex(index.card(item))
+                for item in sorted(linked)
+                if item in index.cards
+            ]
+        },
     ]
 
 
