@@ -23,6 +23,7 @@ def test_analyst_page_is_served() -> None:
     assert "Conflicts" in html
     assert "Approval queue" in html
     assert "/graph/" in html
+    assert "/monitoring" in html
     assert "function escapeHtml" in html
     assert "sarBlock" in html
     assert "id=\"mode\"" in html

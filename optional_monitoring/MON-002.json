@@ -1,0 +1,156 @@
+{
+  "case_id": "MON-002",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.17,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0.0,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3514573 is a 36.97 USD in_person product-W purchase in billing region 264.0 on 2016-12-04 22:40:36. Card C09933-K2 is a visa debit owned by C09933.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3514573)",
+        "entity_ids": [
+          "3514573",
+          "C09933-K2",
+          "C09933"
+        ]
+      },
+      {
+        "claim": "Region 264.0 has 2219 prior purchases on this card before the alert.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C09933-K2, region=264.0)",
+        "entity_ids": [
+          "3002300",
+          "3002431",
+          "3002742",
+          "3002926",
+          "3002940",
+          "3002976",
+          "3002998",
+          "3003003",
+          "3003079",
+          "3003147",
+          "3003637",
+          "3003666"
+        ]
+      },
+      {
+        "claim": "Closed cases on this card: CC-0104 (confirmed_fraud, out_of_region_use); CC-0657 (cleared, none); CC-0765 (confirmed_fraud, out_of_region_use); CC-1228 (confirmed_fraud, account_takeover); CC-1524 (confirmed_fraud, account_takeover); CC-1682 (confirmed_fraud, out_of_region_use); CC-2565 (confirmed_fraud, out_of_region_use); CC-2834 (confirmed_fraud, account_takeover); CC-2986 (confirmed_fraud, out_of_region_use); CC-3136 (confirmed_fraud, account_takeover); CC-3439 (confirmed_fraud, out_of_region_use); CC-3821 (confirmed_fraud, out_of_region_use); CC-4196 (confirmed_fraud, out_of_region_use); CC-4277 (confirmed_fraud, out_of_region_use); CC-4455 (confirmed_fraud, account_takeover); CC-4597 (confirmed_fraud, account_takeover); CC-4787 (confirmed_fraud, account_takeover); CC-5092 (confirmed_fraud, out_of_region_use); CC-5521 (confirmed_fraud, account_takeover).",
+        "source": "graph",
+        "ref": "query:closed_cases(card_id=C09933-K2)",
+        "entity_ids": [
+          "CC-0104",
+          "CC-0657",
+          "CC-0765",
+          "CC-1228",
+          "CC-1524",
+          "CC-1682",
+          "CC-2565",
+          "CC-2834",
+          "CC-2986",
+          "CC-3136",
+          "CC-3439",
+          "CC-3821"
+        ]
+      },
+      {
+        "claim": "Email domain yahoo.com is present on the flagged purchase; email_fanout found 22 other cards, treated as too common for R6.",
+        "source": "graph",
+        "ref": "query:email_fanout(e=yahoo.com)",
+        "entity_ids": [
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "Billing region 264.0 appears on 17 other cards in the local 1-hop fan-out. Region sharing is recorded, not treated as proof of a shared origin.",
+        "source": "graph",
+        "ref": "query:region_fanout(r=264.0)",
+        "entity_ids": [
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "Supports legitimate: flagged amount and channel match established spend on card C09933-K2.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C09933-K2, region=264.0)",
+        "entity_ids": [
+          "C09933-K2",
+          "3514573"
+        ]
+      },
+      {
+        "claim": "Customer confirmed they made the 36.97 USD in_person purchase in billing region 264.0 and still have the card.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Closed case CC-0911: Case CC-0911: cardholder C12900 reported unrecognized activity on card C12900-K2. 1 transaction(s) between 2016-07-21 and 2016-07-21 totaling $932.08 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
+        "source": "document",
+        "ref": "query:rag_search(closed_case/CC-0911)",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0104",
+      "CC-0657",
+      "CC-0765",
+      "CC-1228",
+      "CC-0003",
+      "CC-0405",
+      "CC-0696",
+      "CC-0873"
+    ],
+    "summary": "MON-002 is a risk_score alert on a 36.97 USD in_person purchase in billing region 264.0. Graph history shows 2219 prior purchases in that region. Pattern is none; fraud probability 0.17. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "written_to_graph": true,
+    "graph_case_id": "MON-002"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer confirms they made the 36.97 USD in_person purchase in billing region 264.0 and still have the card."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: the alert is a single weak signal; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: evidence requested from the customer"
+      }
+    ],
+    "final": [
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: customer confirmed the transaction"
+      }
+    ],
+    "what_changed": "Customer confirmation replaced verification with close as not fraud."
+  },
+  "sar": {
+    "file": false,
+    "reason": "R3: customer confirmed; FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A verification response settled the question (confirm).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

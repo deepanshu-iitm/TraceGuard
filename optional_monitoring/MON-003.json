@@ -1,0 +1,152 @@
+{
+  "case_id": "MON-003",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.17,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0.0,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3544198 is a 78.87 USD online product-C purchase in billing region unknown on 2016-12-15 00:43:21. Card C13171-K2 is a visa credit owned by C13171.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3544198)",
+        "entity_ids": [
+          "3544198",
+          "C13171-K2",
+          "C13171"
+        ]
+      },
+      {
+        "claim": "The flagged transaction has no billing region on the graph.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C13171-K2, region=)",
+        "entity_ids": [
+          "3544198"
+        ]
+      },
+      {
+        "claim": "Closed cases on this card: CC-0056 (confirmed_fraud, card_not_present_new_device); CC-0467 (confirmed_fraud, card_not_present_new_device); CC-0772 (confirmed_fraud, card_not_present_new_device); CC-1293 (confirmed_fraud, card_not_present_fraud); CC-1715 (confirmed_fraud, card_not_present_new_device); CC-1925 (confirmed_fraud, card_not_present_fraud); CC-2059 (confirmed_fraud, card_not_present_new_device); CC-2244 (confirmed_fraud, card_not_present_new_device); CC-2454 (confirmed_fraud, card_not_present_fraud); CC-2716 (confirmed_fraud, card_not_present_new_device); CC-3079 (confirmed_fraud, card_not_present_new_device); CC-3422 (confirmed_fraud, card_not_present_fraud); CC-3566 (confirmed_fraud, card_not_present_fraud); CC-3728 (confirmed_fraud, card_not_present_fraud); CC-3928 (confirmed_fraud, card_not_present_new_device); CC-4163 (confirmed_fraud, card_not_present_new_device); CC-4485 (confirmed_fraud, card_not_present_new_device); CC-4819 (cleared, none); CC-5010 (confirmed_fraud, card_not_present_new_device).",
+        "source": "graph",
+        "ref": "query:closed_cases(card_id=C13171-K2)",
+        "entity_ids": [
+          "CC-0056",
+          "CC-0467",
+          "CC-0772",
+          "CC-1293",
+          "CC-1715",
+          "CC-1925",
+          "CC-2059",
+          "CC-2244",
+          "CC-2454",
+          "CC-2716",
+          "CC-3079",
+          "CC-3422"
+        ]
+      },
+      {
+        "claim": "Device Windows |  | chrome 66.0 |  is also linked to 7 other card(s): C07671-K2, C08106-K1, C09933-K2, C09988-K1, C11891-K1, C11923-K1, C11923-K2.",
+        "source": "graph",
+        "ref": "query:shared_cards_on_device(d=Windows |  | chrome 66.0 | )",
+        "entity_ids": [
+          "Windows |  | chrome 66.0 | ",
+          "C07671-K2",
+          "C08106-K1",
+          "C09933-K2",
+          "C09988-K1",
+          "C11891-K1",
+          "C11923-K1",
+          "C11923-K2"
+        ]
+      },
+      {
+        "claim": "Email domain hotmail.com is present on the flagged purchase; email_fanout found 21 other cards, treated as too common for R6.",
+        "source": "graph",
+        "ref": "query:email_fanout(e=hotmail.com)",
+        "entity_ids": [
+          "C13171-K2"
+        ]
+      },
+      {
+        "claim": "Supports legitimate: flagged amount and channel match established spend on card C13171-K2.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C13171-K2, region=)",
+        "entity_ids": [
+          "C13171-K2",
+          "3544198"
+        ]
+      },
+      {
+        "claim": "Customer confirmed they made the 78.87 USD online purchase in billing region  and still have the card.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Closed case CC-2281: Case CC-2281: cardholder C13254 reported unrecognized activity on card C13254-K1. 1 transaction(s) between 2016-08-17 and 2016-08-17 totaling $65.59 were confirmed fraudulent. Online purchases inconsistent with the cardholder's usual merchants and amounts. Online transactions came from a SM-G530H Build/LRX22G on chrome 46.0 for android. Card blocked and reissued. Customer reimbursed.",
+        "source": "document",
+        "ref": "query:rag_search(closed_case/CC-2281)",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0056",
+      "CC-0467",
+      "CC-0772",
+      "CC-1293",
+      "CC-4743",
+      "CC-4819",
+      "CC-0003",
+      "CC-0405"
+    ],
+    "summary": "MON-003 is a risk_score alert on a 78.87 USD online purchase in billing region unknown. Graph history shows 0 prior purchases in that region. Pattern is none; fraud probability 0.17. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "written_to_graph": true,
+    "graph_case_id": "MON-003"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer confirms they made the 78.87 USD online purchase in billing region  and still have the card."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: the alert is a single weak signal; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: evidence requested from the customer"
+      }
+    ],
+    "final": [
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: customer confirmed the transaction"
+      }
+    ],
+    "what_changed": "Customer confirmation replaced verification with close as not fraud."
+  },
+  "sar": {
+    "file": false,
+    "reason": "R3: customer confirmed; FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A verification response settled the question (confirm).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

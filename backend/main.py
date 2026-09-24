@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
-from backend.api import cases_router, graph_router, investigate_router
+from backend.api import cases_router, graph_router, investigate_router, monitoring_router
 from backend.config import settings
 
 FRONTEND = Path(__file__).resolve().parents[1] / "frontend" / "index.html"
@@ -20,6 +20,7 @@ app = FastAPI(
 app.include_router(cases_router)
 app.include_router(investigate_router)
 app.include_router(graph_router)
+app.include_router(monitoring_router)
 
 
 @app.get("/")

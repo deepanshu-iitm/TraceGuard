@@ -145,18 +145,25 @@
       });
     }
 
+    function loadCase(item) {
+      const route = item.case_id.startsWith("MON-")
+        ? `/monitoring/${encodeURIComponent(item.case_id)}`
+        : `/cases/${encodeURIComponent(item.case_id)}`;
+      return fetch(route).then((res) => {
+        if (!res.ok) {
+          return res.json().then((err) => { throw new Error(err.detail || `HTTP ${res.status}`); });
+        }
+        return res.json();
+      });
+    }
+
     function selectCase(item, btn) {
       selected = item;
       [...casesEl.children].forEach((el) => el.classList.remove("active"));
       btn.classList.add("active");
       panel.innerHTML = `<p>Loading saved answer for ${escapeHtml(item.case_id)}…</p>`;
       Promise.all([
-        fetch(`/cases/${encodeURIComponent(item.case_id)}`).then((res) => {
-          if (!res.ok) {
-            return res.json().then((err) => { throw new Error(err.detail || `HTTP ${res.status}`); });
-          }
-          return res.json();
-        }),
+        loadCase(item),
         fetch(`/graph/${encodeURIComponent(item.case_id)}`).then((res) => res.ok ? res.json() : null).catch(() => null),
       ])
         .then(([answer, graph]) => renderAnswer(answer, "saved", graph))
@@ -329,9 +336,11 @@
       svg.innerHTML = lines + circles;
     }
 
-    fetch("/cases")
-      .then((res) => res.json())
-      .then(renderCases)
+    Promise.all([
+      fetch("/cases").then((res) => res.json()),
+      fetch("/monitoring").then((res) => res.ok ? res.json() : []),
+    ])
+      .then(([exam, extra]) => renderCases([...(exam || []), ...(extra || [])]))
       .catch((error) => { panel.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`; });
 
     fetch("/health")
