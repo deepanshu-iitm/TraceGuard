@@ -41,7 +41,6 @@
         "source": "graph",
         "ref": "query:card_region_history(card_id=C07671-K2, region=)",
         "entity_ids": [
-          "3276674",
           "3526826"
         ]
       },
@@ -61,18 +60,7 @@
           "3112324",
           "3117085",
           "3117123",
-          "3120420",
-          "3120423",
-          "3122136",
-          "3106996",
-          "3247646",
-          "3247679",
-          "3247726",
-          "3247646",
-          "3285920",
-          "3320387",
-          "3324796",
-          "3320387"
+          "3120420"
         ]
       },
       {
@@ -146,7 +134,7 @@
       "CC-4787",
       "CC-5521"
     ],
-    "summary": "HHG-013 is a risk_score alert on a 35.66 USD online purchase in billing region unknown. Graph history shows 1 prior purchases in that region. Pattern is account_takeover; fraud probability 0.84. Episode size 3; exposure 138.39 USD. Verdict is fraud.",
+    "summary": "The case HHG-013 involved a flagged $35.66 online purchase with no billing region on record, linked to card C07671-K2. Graph evidence showed no prior purchases in that region and multiple prior confirmed fraud cases involving account takeover on this card. The pattern matched account takeover fraud with a high probability of 0.84, supported by device sharing and transaction clustering. The applicable policy addresses mixed-channel behavior and stolen credentials indicative of account takeover.",
     "written_to_graph": true,
     "graph_case_id": "HHG-013"
   },
@@ -159,11 +147,6 @@
   ],
   "next_best_actions": {
     "initial": [
-      {
-        "action": "ESCALATE_TO_ANALYST",
-        "route": "auto",
-        "reason": "R8: uncertain with exposure or conflicting evidence"
-      },
       {
         "action": "CREATE_CASE",
         "route": "auto",
@@ -193,7 +176,7 @@
     "activity_dates": []
   },
   "stop_reason": "A verification response settled the question (deny).",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tool_calls": 5,
+  "tokens": 1409,
+  "latency_s": 17.36
 }

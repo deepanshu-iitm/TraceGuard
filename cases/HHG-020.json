@@ -51,78 +51,7 @@
           "3067945",
           "3071655",
           "3090666",
-          "3091289",
-          "3095915",
-          "3098904",
-          "3099578",
-          "3106491",
-          "3111766",
-          "3119975",
-          "3144210",
-          "3159395",
-          "3162448",
-          "3182252",
-          "3190062",
-          "3193949",
-          "3194038",
-          "3207933",
-          "3219977",
-          "3220036",
-          "3237603",
-          "3239018",
-          "3254649",
-          "3259414",
-          "3275655",
-          "3275722",
-          "3287641",
-          "3287769",
-          "3292205",
-          "3292782",
-          "3294669",
-          "3298579",
-          "3330922",
-          "3330981",
-          "3331572",
-          "3336034",
-          "3341729",
-          "3357481",
-          "3368200",
-          "3374154",
-          "3378679",
-          "3383236",
-          "3386248",
-          "3391994",
-          "3394481",
-          "3404520",
-          "3405520",
-          "3409428",
-          "3413886",
-          "3414639",
-          "3432378",
-          "3434201",
-          "3434283",
-          "3439235",
-          "3439294",
-          "3439323",
-          "3442965",
-          "3445449",
-          "3448839",
-          "3453461",
-          "3458046",
-          "3467211",
-          "3472874",
-          "3478576",
-          "3481255",
-          "3485208",
-          "3486128",
-          "3486217",
-          "3489373",
-          "3493555",
-          "3497527",
-          "3497540",
-          "3501882",
-          "3501890",
-          "3509359"
+          "3091289"
         ]
       },
       {
@@ -133,8 +62,6 @@
           "CC-2277",
           "CC-2447",
           "3182252",
-          "3182252",
-          "3193949",
           "3193949"
         ]
       },
@@ -187,21 +114,15 @@
         ]
       },
       {
+        "claim": "Closed case CC-5293: Case CC-5293: cardholder C00329 reported unrecognized activity on card C00329-K2. 2 transaction(s) between 2016-10-23 and 2016-10-24 totaling $110.97 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
+        "source": "document",
+        "ref": "query:rag_search(closed_case/CC-5293)",
+        "entity_ids": []
+      },
+      {
         "claim": "Account takeover: Mixed-channel behavior inconsistent with the cardholder, often with device and match-flag anomalies. Stolen credentials, not only a stolen card number.",
         "source": "document",
         "ref": "query:rag_search(pattern:account_takeover)",
-        "entity_ids": []
-      },
-      {
-        "claim": "Closed case CC-1294: Case CC-1294: cardholder C08943 reported unrecognized activity on card C08943-K2. 3 transaction(s) between 2016-07-26 and 2016-07-26 totaling $203.14 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
-        "source": "document",
-        "ref": "query:rag_search(closed_case/CC-1294)",
-        "entity_ids": []
-      },
-      {
-        "claim": "R3 Customer confirms: When the customer confirms the transaction, recommend CLOSE_NO_FRAUD and record the confirmation.",
-        "source": "document",
-        "ref": "query:rag_search(policy:R3)",
         "entity_ids": []
       }
     ],
@@ -215,7 +136,7 @@
       "CC-1450",
       "CC-2717"
     ],
-    "summary": "HHG-020 is a risk_score alert on a 125.08 USD online purchase in billing region 264.0. Graph history shows 82 prior purchases in that region. Pattern is account_takeover; fraud probability 0.94. Episode size 3; exposure 476.03 USD. Verdict is fraud.",
+    "summary": "The case HHG-020 involved a flagged online purchase of 125.08 USD on card C12265-K2 in billing region 264.0, with 82 prior purchases in that region. The investigation identified an account takeover pattern with a high fraud probability of 0.94, supported by graph evidence of device sharing, email domain links, and episode reconstruction of 3 related transactions totaling 476.03 USD. The applicable policy addresses account takeover fraud characterized by mixed-channel behavior and stolen credentials.",
     "written_to_graph": true,
     "graph_case_id": "HHG-020"
   },
@@ -278,7 +199,7 @@
     ]
   },
   "stop_reason": "Fraud probability 0.94 is supported by 2 independent pieces of evidence.",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tool_calls": 7,
+  "tokens": 2084,
+  "latency_s": 16.74
 }

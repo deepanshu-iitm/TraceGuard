@@ -47,20 +47,7 @@
           "3121617",
           "3157522",
           "3193185",
-          "3237339",
-          "3237387",
-          "3282542",
-          "3282661",
-          "3329022",
-          "3350771",
-          "3351935",
-          "3392418",
-          "3397310",
-          "3411190",
-          "3419055",
-          "3475344",
-          "3492086",
-          "3506725"
+          "3237339"
         ]
       },
       {
@@ -124,15 +111,9 @@
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-5314: Case CC-5314: cardholder C04346 reported unrecognized activity on card C04346-K2. 1 transaction(s) between 2016-10-26 and 2016-10-26 totaling $309.97 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-1294: Case CC-1294: cardholder C08943 reported unrecognized activity on card C08943-K2. 3 transaction(s) between 2016-07-26 and 2016-07-26 totaling $203.14 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "query:rag_search(closed_case/CC-5314)",
-        "entity_ids": []
-      },
-      {
-        "claim": "Account takeover: Mixed-channel behavior inconsistent with the cardholder, often with device and match-flag anomalies. Stolen credentials, not only a stolen card number.",
-        "source": "document",
-        "ref": "query:rag_search(pattern:account_takeover)",
+        "ref": "query:rag_search(closed_case/CC-1294)",
         "entity_ids": []
       }
     ],
@@ -146,7 +127,7 @@
       "CC-2717",
       "CC-1699"
     ],
-    "summary": "HHG-010 is a risk_score alert on a 1000.03 USD online purchase in billing region 469.0. Graph history shows 24 prior purchases in that region. Pattern is account_takeover; fraud probability 0.84. Episode size 3; exposure 1200.10 USD. Verdict is fraud.",
+    "summary": "The case HHG-010 involved a flagged online purchase of 1000.03 USD on card C10434-K1 in billing region 469.0, with 24 prior purchases in that region. Graph evidence showed a pattern of account takeover with a fraud probability of 0.84, supported by device sharing and mixed-channel activity. The applicable policy is R6, concerning shared origin or high-exposure confirmed fraudulent activity.",
     "written_to_graph": true,
     "graph_case_id": "HHG-010"
   },
@@ -206,7 +187,7 @@
     ]
   },
   "stop_reason": "A verification response settled the question (deny).",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tool_calls": 7,
+  "tokens": 1888,
+  "latency_s": 14.17
 }

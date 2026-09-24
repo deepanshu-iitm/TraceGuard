@@ -50,12 +50,8 @@
           "CC-2964",
           "CC-3587",
           "3090135",
-          "3090135",
-          "3140508",
           "3140508",
           "3226855",
-          "3226855",
-          "3271314",
           "3271314"
         ]
       },
@@ -83,9 +79,9 @@
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-3026: Case CC-3026: cardholder C03381 reported unrecognized activity on card C03381-K1. 1 transaction(s) between 2016-09-04 and 2016-09-04 totaling $553.98 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-3357: Case CC-3357: cardholder C09251 reported unrecognized activity on card C09251-K1. 2 transaction(s) between 2016-09-09 and 2016-09-11 totaling $549.04 were confirmed fraudulent. Card-present use in a billing region the cardholder had no history in, while the cardholder retained the card. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "query:rag_search(closed_case/CC-3026)",
+        "ref": "query:rag_search(closed_case/CC-3357)",
         "entity_ids": []
       }
     ],
@@ -99,7 +95,7 @@
       "CC-0003",
       "CC-0405"
     ],
-    "summary": "HHG-001 is a risk_score alert on a 77.07 USD in_person purchase in billing region 444.0. Graph history shows 10 prior purchases in that region. Pattern is none; fraud probability 0.12. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "summary": "The flagged transaction of 77.07 USD was an in-person purchase in billing region 444.0, where the card had 10 prior purchases, supporting legitimacy. The customer confirmed the transaction and still possesses the card. Despite previous confirmed fraud cases on this card, the pattern here is none and the fraud probability is low at 0.12, leading to a legitimate verdict under policy R3.",
     "written_to_graph": true,
     "graph_case_id": "HHG-001"
   },
@@ -141,7 +137,7 @@
     "activity_dates": []
   },
   "stop_reason": "A verification response settled the question (confirm).",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tool_calls": 4,
+  "tokens": 1164,
+  "latency_s": 13.22
 }

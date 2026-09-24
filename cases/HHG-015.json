@@ -45,9 +45,7 @@
           "CC-1313",
           "CC-3886",
           "3051990",
-          "3051990",
           "3113745",
-          "3292070",
           "3292070"
         ]
       },
@@ -102,15 +100,9 @@
         "entity_ids": []
       },
       {
-        "claim": "Account takeover: Mixed-channel behavior inconsistent with the cardholder, often with device and match-flag anomalies. Stolen credentials, not only a stolen card number.",
+        "claim": "Closed case CC-1294: Case CC-1294: cardholder C08943 reported unrecognized activity on card C08943-K2. 3 transaction(s) between 2016-07-26 and 2016-07-26 totaling $203.14 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "query:rag_search(pattern:account_takeover)",
-        "entity_ids": []
-      },
-      {
-        "claim": "Closed case CC-4666: Case CC-4666: cardholder C09301 reported unrecognized activity on card C09301-K2. 1 transaction(s) between 2016-10-09 and 2016-10-09 totaling $39.92 were confirmed fraudulent. Online purchases from a device not previously seen on this account, inconsistent with the cardholder's history. Online transactions came from a iOS Device on mobile safari generic. Card blocked and reissued. Customer reimbursed.",
-        "source": "document",
-        "ref": "query:rag_search(closed_case/CC-4666)",
+        "ref": "query:rag_search(closed_case/CC-1294)",
         "entity_ids": []
       }
     ],
@@ -124,7 +116,7 @@
       "CC-5521",
       "CC-1450"
     ],
-    "summary": "HHG-015 is a risk_score alert on a 599.94 USD online purchase in billing region 327.0. Graph history shows 0 prior purchases in that region. Pattern is account_takeover; fraud probability 0.83. Episode size 3; exposure 1461.99 USD. Verdict is fraud.",
+    "summary": "The case HHG-015 involved a flagged online purchase of 599.94 USD in billing region 327.0 on card C03042-K1, with no prior purchases in that region, indicating an account takeover pattern. Graph evidence showed a mixed-channel takeover with a new device and a cluster of 3 related transactions totaling 1461.99 USD, supporting the fraud verdict. The applicable policy is R6, concerning shared origin or high-exposure confirmed activity.",
     "written_to_graph": true,
     "graph_case_id": "HHG-015"
   },
@@ -183,6 +175,6 @@
   },
   "stop_reason": "A verification response settled the question (deny).",
   "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tokens": 1945,
+  "latency_s": 12.39
 }

@@ -88,9 +88,9 @@
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-3170: Case CC-3170: cardholder C07648 reported unrecognized activity on card C07648-K2. 3 transaction(s) between 2016-09-06 and 2016-09-06 totaling $402.00 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-4023: Case CC-4023: cardholder C09363 reported unrecognized activity on card C09363-K2. 3 transaction(s) between 2016-09-26 and 2016-09-26 totaling $86.93 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "query:rag_search(closed_case/CC-3170)",
+        "ref": "query:rag_search(closed_case/CC-4023)",
         "entity_ids": []
       }
     ],
@@ -104,7 +104,7 @@
       "CC-0873",
       "CC-1313"
     ],
-    "summary": "HHG-017 is a risk_score alert on a 100.09 USD online purchase in billing region 204.0. Graph history shows 5 prior purchases in that region. Pattern is none; fraud probability 0.11. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "summary": "The alert HHG-017 involved a $100.09 online purchase in billing region 204.0 on card C04570-K1. Graph evidence showed 5 prior purchases in the same region on this card, supporting the legitimacy of the transaction. The applicable policy is that customer confirmation and consistent transaction history reduce fraud probability, leading to a legitimate verdict.",
     "written_to_graph": true,
     "graph_case_id": "HHG-017"
   },
@@ -147,6 +147,6 @@
   },
   "stop_reason": "A verification response settled the question (confirm).",
   "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tokens": 1335,
+  "latency_s": 10.41
 }

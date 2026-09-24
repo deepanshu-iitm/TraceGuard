@@ -38,38 +38,7 @@
           "3131271",
           "3134597",
           "3162397",
-          "3162401",
-          "3169424",
-          "3182416",
-          "3202013",
-          "3216800",
-          "3216812",
-          "3305349",
-          "3305359",
-          "3339319",
-          "3342990",
-          "3348830",
-          "3351586",
-          "3380116",
-          "3380157",
-          "3395017",
-          "3397283",
-          "3399119",
-          "3402877",
-          "3426604",
-          "3459653",
-          "3474725",
-          "3482097",
-          "3488795",
-          "3493772",
-          "3511680",
-          "3521522",
-          "3521524",
-          "3521954",
-          "3522026",
-          "3527215",
-          "3530056",
-          "3530164"
+          "3162401"
         ]
       },
       {
@@ -85,19 +54,10 @@
           "CC-4957",
           "3136399",
           "3220442",
-          "3220442",
           "3227871",
           "3227895",
-          "3227871",
           "3252324",
-          "3252393",
-          "3254075",
-          "3252324",
-          "3275452",
-          "3280670",
-          "3275452",
-          "3371052",
-          "3371052"
+          "3252393"
         ]
       },
       {
@@ -132,15 +92,9 @@
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-1340: Case CC-1340: cardholder C04068 reported unrecognized activity on card C04068-K1. 1 transaction(s) between 2016-07-27 and 2016-07-27 totaling $48.97 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-3026: Case CC-3026: cardholder C03381 reported unrecognized activity on card C03381-K1. 1 transaction(s) between 2016-09-04 and 2016-09-04 totaling $553.98 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "query:rag_search(closed_case/CC-1340)",
-        "entity_ids": []
-      },
-      {
-        "claim": "Out-of-region use: Card-present activity in a billing region with no prior history, while normal home activity may continue. One new region is not automatically fraud; travel can look the same.",
-        "source": "document",
-        "ref": "query:rag_search(pattern:out_of_region_use)",
+        "ref": "query:rag_search(closed_case/CC-3026)",
         "entity_ids": []
       }
     ],
@@ -154,7 +108,7 @@
       "CC-0696",
       "CC-0873"
     ],
-    "summary": "HHG-003 is a customer_report alert on a 49.00 USD in_person purchase in billing region 330.0. Graph history shows 42 prior purchases in that region. Pattern is none; fraud probability 0.13. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "summary": "The alert involved a $49.00 in-person purchase in billing region 330.0 on card C08623-K2, which has 42 prior purchases in the same region, supporting legitimacy. Despite a customer report denying the purchase, the transaction pattern and history indicate no fraud, aligning with policy on regional purchase consistency. The verdict is legitimate with a low fraud probability of 0.13.",
     "written_to_graph": true,
     "graph_case_id": "HHG-003"
   },
@@ -205,7 +159,7 @@
     "activity_dates": []
   },
   "stop_reason": "Fraud probability 0.13 is supported by 2 independent pieces of evidence.",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tool_calls": 5,
+  "tokens": 1267,
+  "latency_s": 10.15
 }

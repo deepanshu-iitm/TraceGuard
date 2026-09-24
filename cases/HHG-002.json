@@ -31,40 +31,6 @@
         "source": "graph",
         "ref": "query:card_region_history(card_id=C11891-K1, region=)",
         "entity_ids": [
-          "3004451",
-          "3043555",
-          "3073868",
-          "3176883",
-          "3185167",
-          "3189049",
-          "3215277",
-          "3227718",
-          "3230270",
-          "3230363",
-          "3230393",
-          "3230409",
-          "3230493",
-          "3264883",
-          "3272926",
-          "3273763",
-          "3295566",
-          "3302993",
-          "3307219",
-          "3307244",
-          "3307245",
-          "3311844",
-          "3326030",
-          "3351763",
-          "3385561",
-          "3400334",
-          "3400385",
-          "3400395",
-          "3400406",
-          "3400436",
-          "3400451",
-          "3400494",
-          "3400552",
-          "3433977",
           "3478782"
         ]
       },
@@ -74,7 +40,6 @@
         "ref": "query:closed_cases(card_id=C11891-K1)",
         "entity_ids": [
           "CC-4160",
-          "3311844",
           "3311844"
         ]
       },
@@ -103,12 +68,10 @@
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-1925: Case CC-1925: cardholder C13171 reported unrecognized activity on card C13171-K2. 3 transaction(s) between 2016-08-08 and 2016-08-08 totaling $120.30 were confirmed fraudulent. Online purchases inconsistent with the cardholder's usual merchants and amounts. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-1716: Case CC-1716: cardholder C04105 reported unrecognized activity on card C04105-K2. 2 transaction(s) between 2016-08-04 and 2016-08-04 totaling $98.03 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "query:rag_search(closed_case/CC-1925)",
-        "entity_ids": [
-          "CC-1925"
-        ]
+        "ref": "query:rag_search(closed_case/CC-1716)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
@@ -121,7 +84,7 @@
       "CC-2860",
       "CC-3422"
     ],
-    "summary": "HHG-002 is a risk_score alert on a 292.36 USD online purchase in billing region unknown. Graph history shows 34 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.50. Episode size 3; exposure 340.00 USD. Verdict is uncertain.",
+    "summary": "The case HHG-002 involves a flagged online purchase of $292.36 with no billing region recorded, linked to card C11891-K1. Graph evidence shows no prior purchases in the billing region and a history of confirmed card_not_present_fraud cases on this card. The applicable policy concerns card_not_present_fraud with a fraud probability of 0.50, leading to an uncertain verdict.",
     "written_to_graph": true,
     "graph_case_id": "HHG-002"
   },
@@ -168,7 +131,7 @@
     "activity_dates": []
   },
   "stop_reason": "Further steps are unlikely to change the decision.",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tool_calls": 4,
+  "tokens": 1101,
+  "latency_s": 22.13
 }

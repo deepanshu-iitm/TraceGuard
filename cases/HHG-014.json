@@ -44,32 +44,7 @@
           "3160002",
           "3170774",
           "3179654",
-          "3197482",
-          "3221711",
-          "3228563",
-          "3232776",
-          "3245742",
-          "3266679",
-          "3284106",
-          "3307900",
-          "3323111",
-          "3326424",
-          "3330877",
-          "3353237",
-          "3358389",
-          "3364272",
-          "3378558",
-          "3403715",
-          "3412468",
-          "3432321",
-          "3438604",
-          "3448940",
-          "3457509",
-          "3458103",
-          "3458865",
-          "3460634",
-          "3477218",
-          "3478561"
+          "3197482"
         ]
       },
       {
@@ -117,12 +92,10 @@
         ]
       },
       {
-        "claim": "Closed case CC-3905: Case CC-3905: cardholder C11923 reported unrecognized activity on card C11923-K2. 44 transaction(s) between 2016-09-11 and 2016-09-23 totaling $1,397.53 were confirmed fraudulent. Online purchases from a device not previously seen on this account, inconsistent with the cardholder's history. Online transactions came from a SAMSUNG SM-G532M Build/MMB29T on Samsung/SM-G532M. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-0667: Case CC-0667: cardholder C10585 reported unrecognized activity on card C10585-K2. 1 transaction(s) between 2016-07-17 and 2016-07-17 totaling $75.09 were confirmed fraudulent. Online purchases inconsistent with the cardholder's usual merchants and amounts. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "query:rag_search(closed_case/CC-3905)",
-        "entity_ids": [
-          "CC-3905"
-        ]
+        "ref": "query:rag_search(closed_case/CC-0667)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
@@ -135,7 +108,7 @@
       "CC-3422",
       "CC-3566"
     ],
-    "summary": "HHG-014 is a analyst_request alert on a 74.96 USD online purchase in billing region 191.0. Graph history shows 36 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.80. Episode size 3; exposure 142.00 USD. Verdict is fraud.",
+    "summary": "The case HHG-014 involved a flagged online purchase of 74.96 USD on card C13487-K1 in billing region 191.0, with 36 prior purchases in that region. Episode reconstruction grouped 3 related transactions totaling 142.00 USD, indicating a card_not_present_fraud pattern with 0.8 probability. The policy on shared origin or high-exposure confirmed activity (R6) applies, supported by graph evidence of device usage and email domain commonality.",
     "written_to_graph": true,
     "graph_case_id": "HHG-014"
   },
@@ -180,7 +153,7 @@
   "sar": {
     "file": true,
     "reason": "R6: shared origin or high-exposure confirmed activity",
-    "narrative": "On 2016-11-21, card C13487-K1 belonging to customer C13487 was used for a 74.96 USD online transaction 3478561 in billing region 191.0, country 87.0. The product code was C. Episode reconstruction identified 3 related transaction(s) totaling 142.00 USD from 2016-11-21 to 2016-11-22. Graph neighborhood review found this activity inconsistent with the cardholder's established pattern or linked it to a shared origin, email cluster, or mixed-channel takeover.  The investigation treated the purchase as unauthorized. Connected cards recommended for monitoring: none beyond the flagged card. The flagged card is recommended for restriction pending reissue. Total unauthorized amount: 142.00 USD. This report is filed so a regulator can review the episode on its own.",
+    "narrative": "On 2016-11-21, card C13487-K1 belonging to customer C13487 was used for a 74.96 USD online transaction 3478561 in billing region 191.0. Episode reconstruction identified 3 related transactions totaling 142.00 USD from 2016-11-21 to 2016-11-22. Graph analysis showed 36 prior purchases in the same region and usage of a single device without other cards, while the email domain gmail.com was common across 26 cards, indicating a shared origin risk. This activity was inconsistent with the cardholder's usual pattern and linked to a potential mixed-channel takeover. The investigation concluded the purchase was unauthorized, recommending case creation, report filing, and monitoring of connected cards. The flagged card is recommended for restriction pending reissue, with a total unauthorized amount of 142.00 USD.",
     "subjects": [
       "C13487",
       "C13487-K1"
@@ -193,6 +166,6 @@
   },
   "stop_reason": "Further steps are unlikely to change the decision.",
   "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tokens": 1774,
+  "latency_s": 13.72
 }

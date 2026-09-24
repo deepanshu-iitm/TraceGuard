@@ -68,9 +68,9 @@
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-3633: Case CC-3633: cardholder C10114 reported unrecognized activity on card C10114-K1. 2 transaction(s) between 2016-09-16 and 2016-09-18 totaling $109.69 were confirmed fraudulent. Online purchases inconsistent with the cardholder's usual merchants and amounts. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-2912: Case CC-2912: cardholder C06167 reported unrecognized activity on card C06167-K1. 1 transaction(s) between 2016-09-01 and 2016-09-01 totaling $225.94 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "query:rag_search(closed_case/CC-3633)",
+        "ref": "query:rag_search(closed_case/CC-2912)",
         "entity_ids": []
       }
     ],
@@ -84,7 +84,7 @@
       "CC-3422",
       "CC-3566"
     ],
-    "summary": "HHG-009 is a customer_report alert on a 30.02 USD online purchase in billing region 203.0. Graph history shows 1 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.46. Episode size 3; exposure 130.05 USD. Verdict is fraud.",
+    "summary": "The case HHG-009 involved a flagged online purchase of 30.02 USD in billing region 203.0 on card C08299-K1, with one prior purchase in that region. Graph evidence showed a pattern of card_not_present_fraud with an episode of 3 transactions totaling 130.05 USD. The customer denied the purchase, and the applicable policy led to blocking the card and creating a case. The verdict was fraud with a probability of 0.46.",
     "written_to_graph": true,
     "graph_case_id": "HHG-009"
   },
@@ -125,7 +125,7 @@
     "activity_dates": []
   },
   "stop_reason": "A verification response settled the question (deny).",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tool_calls": 5,
+  "tokens": 1142,
+  "latency_s": 15.4
 }

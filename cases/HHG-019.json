@@ -55,13 +55,8 @@
           "3162138",
           "3166054",
           "3166257",
-          "3160680",
           "3171000",
           "3222220",
-          "3222220",
-          "3376101",
-          "3376146",
-          "3376171",
           "3376101"
         ]
       },
@@ -116,15 +111,9 @@
         "entity_ids": []
       },
       {
-        "claim": "Account takeover: Mixed-channel behavior inconsistent with the cardholder, often with device and match-flag anomalies. Stolen credentials, not only a stolen card number.",
+        "claim": "Closed case CC-1294: Case CC-1294: cardholder C08943 reported unrecognized activity on card C08943-K2. 3 transaction(s) between 2016-07-26 and 2016-07-26 totaling $203.14 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "query:rag_search(pattern:account_takeover)",
-        "entity_ids": []
-      },
-      {
-        "claim": "Closed case CC-3357: Case CC-3357: cardholder C09251 reported unrecognized activity on card C09251-K1. 2 transaction(s) between 2016-09-09 and 2016-09-11 totaling $549.04 were confirmed fraudulent. Card-present use in a billing region the cardholder had no history in, while the cardholder retained the card. Card blocked and reissued. Customer reimbursed.",
-        "source": "document",
-        "ref": "query:rag_search(closed_case/CC-3357)",
+        "ref": "query:rag_search(closed_case/CC-1294)",
         "entity_ids": []
       }
     ],
@@ -138,7 +127,7 @@
       "CC-4787",
       "CC-5521"
     ],
-    "summary": "HHG-019 is a risk_score alert on a 99.92 USD online purchase in billing region 264.0. Graph history shows 5 prior purchases in that region. Pattern is account_takeover; fraud probability 0.86. Episode size 3; exposure 252.70 USD. Verdict is fraud.",
+    "summary": "The case HHG-019 involved a flagged $99.92 online purchase in billing region 264.0 on card C07987-K2, with 5 prior purchases in the same region. The account_takeover pattern was identified with a fraud probability of 0.86, supported by device and transaction history evidence, and a total exposure of $252.70. The applicable policy includes blocking the card and creating a case due to confirmed fraud.",
     "written_to_graph": true,
     "graph_case_id": "HHG-019"
   },
@@ -180,7 +169,7 @@
     "activity_dates": []
   },
   "stop_reason": "A verification response settled the question (deny).",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tool_calls": 7,
+  "tokens": 1432,
+  "latency_s": 15.84
 }

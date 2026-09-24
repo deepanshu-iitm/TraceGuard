@@ -38,17 +38,7 @@
           "3189851",
           "3204837",
           "3214695",
-          "3215461",
-          "3221898",
-          "3226372",
-          "3249154",
-          "3382063",
-          "3417005",
-          "3486224",
-          "3486951",
-          "3497187",
-          "3537376",
-          "3553342"
+          "3215461"
         ]
       },
       {
@@ -60,8 +50,7 @@
           "CC-2370",
           "3000607",
           "3188990",
-          "3189081",
-          "3188990"
+          "3189081"
         ]
       },
       {
@@ -96,9 +85,9 @@
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-3493: Case CC-3493: cardholder C04185 reported unrecognized activity on card C04185-K2. 2 transaction(s) between 2016-09-14 and 2016-09-14 totaling $2,156.14 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-1716: Case CC-1716: cardholder C04105 reported unrecognized activity on card C04105-K2. 2 transaction(s) between 2016-08-04 and 2016-08-04 totaling $98.03 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "query:rag_search(closed_case/CC-3493)",
+        "ref": "query:rag_search(closed_case/CC-1716)",
         "entity_ids": []
       }
     ],
@@ -112,7 +101,7 @@
       "CC-1383",
       "CC-1589"
     ],
-    "summary": "HHG-012 is a risk_score alert on a 30.91 USD in_person purchase in billing region 494.0. Graph history shows 21 prior purchases in that region. Pattern is none; fraud probability 0.11. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "summary": "The flagged transaction of 30.91 USD in billing region 494.0 was investigated with graph evidence showing 21 prior purchases in the same region on the card, supporting the legitimacy of the transaction. The customer confirmed the purchase, and no suspicious patterns were detected, resulting in a fraud probability of 0.11. The applicable policy supports closing the case with no fraud due to customer confirmation and consistent transaction history.",
     "written_to_graph": true,
     "graph_case_id": "HHG-012"
   },
@@ -154,7 +143,7 @@
     "activity_dates": []
   },
   "stop_reason": "A verification response settled the question (confirm).",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tool_calls": 5,
+  "tokens": 1204,
+  "latency_s": 9.53
 }

@@ -50,11 +50,7 @@
           "3417709",
           "3419224",
           "3460711",
-          "3463839",
-          "3464219",
-          "3474057",
-          "3476602",
-          "3476682"
+          "3463839"
         ]
       },
       {
@@ -119,7 +115,7 @@
       "CC-3422",
       "CC-3566"
     ],
-    "summary": "HHG-006 is a customer_report alert on a 482.12 USD online purchase in billing region 264.0. Graph history shows 15 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.46. Episode size 5; exposure 1989.04 USD. Verdict is fraud.",
+    "summary": "The investigation of case HHG-006 focused on a flagged online purchase of 482.12 USD on card C07297-K1 in billing region 264.0, supported by graph evidence showing 15 prior purchases in that region and a reconstructed episode of 5 related transactions totaling 1989.04 USD. The pattern identified was card_not_present_fraud with a fraud probability of 0.46. The applicable policy involves blocking the card, creating a case, and filing a report due to customer denial of the transaction.",
     "written_to_graph": true,
     "graph_case_id": "HHG-006"
   },
@@ -164,7 +160,7 @@
   "sar": {
     "file": true,
     "reason": "R2: customer denied the transaction",
-    "narrative": "On 2016-11-21, card C07297-K1 belonging to customer C07297 was used for a 482.12 USD online transaction 3476682 in billing region 264.0, country 87.0. The product code was C. Episode reconstruction identified 5 related transaction(s) totaling 1989.04 USD from 2016-11-21 to 2016-11-22. Graph neighborhood review found this activity inconsistent with the cardholder's established pattern or linked it to a shared origin, email cluster, or mixed-channel takeover.  The investigation treated the purchase as unauthorized. Connected cards recommended for monitoring: C02354-K2, C07987-K2, C09933-K2. The flagged card is recommended for restriction pending reissue. Total unauthorized amount: 1989.04 USD. This report is filed so a regulator can review the episode on its own.",
+    "narrative": "On 2016-11-21, card C07297-K1 belonging to customer C07297 was used for a 482.12 USD online transaction 3476682 in billing region 264.0. Episode reconstruction identified 5 related transactions totaling 1989.04 USD from 2016-11-21 to 2016-11-22. Graph analysis showed 15 prior purchases in the same region and linked the device used to three other cards (C02354-K2, C07987-K2, C09933-K2). The customer denied the transaction, and the investigation treated the purchase as unauthorized. The flagged card was recommended for blocking and reissue, and a report was filed for regulatory review.",
     "subjects": [
       "C07297",
       "C07297-K1",
@@ -180,6 +176,6 @@
   },
   "stop_reason": "A verification response settled the question (deny).",
   "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.0
+  "tokens": 1757,
+  "latency_s": 13.65
 }
