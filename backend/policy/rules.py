@@ -38,6 +38,7 @@ class PolicySnapshot:
     credentials_compromised: bool = False
     evidence_requested: bool = False
     customer_dispute: bool = False
+    step_up_auth: bool = False
 
 
 @dataclass(frozen=True)
@@ -101,7 +102,8 @@ def recommend_actions(snapshot: PolicySnapshot) -> list[RecommendedAction]:
         return _apply_r10(actions, snapshot)
 
     if snapshot.single_signal and snapshot.fraud_probability < 0.70:
-        _add(actions, PolicyAction.VERIFY_WITH_CUSTOMER, "R1", snapshot)
+        action = PolicyAction.STEP_UP_AUTH if snapshot.step_up_auth else PolicyAction.VERIFY_WITH_CUSTOMER
+        _add(actions, action, "R1", snapshot)
         _maybe_create_case(actions, snapshot)
         return actions
 

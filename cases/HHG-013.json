@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_fraud",
     "verdict": "fraud",
-    "fraud_probability": 0.73,
+    "fraud_probability": 0.84,
     "pattern": "account_takeover",
     "pattern_description": "Online purchase 3526826 used a device not seen on this card, shortly after in-person activity. That mixed-channel shift is treated as stolen credentials rather than a stolen card number alone.",
     "affected_txn_ids": [
@@ -99,6 +99,15 @@
         ]
       },
       {
+        "claim": "Supports fraud: new device, mixed-channel takeover, or a tight shared-origin cluster is present on the neighborhood.",
+        "source": "graph",
+        "ref": "query:shared_cards_on_device(d=Windows |  | chrome 66.0 | )",
+        "entity_ids": [
+          "C07671-K2",
+          "3526826"
+        ]
+      },
+      {
         "claim": "Episode reconstruction grouped 3 transactions around 3526826 using history, device, amount outliers, and NEXT edges 3526747, 3526999.",
         "source": "graph",
         "ref": "query:next_chain(t=3526826)",
@@ -145,21 +154,30 @@
       "CC-1475",
       "CC-3216",
       "CC-3761",
-      "CC-4294"
+      "CC-4294",
+      "CC-0255",
+      "CC-0454",
+      "CC-4787",
+      "CC-5521"
     ],
-    "summary": "HHG-013 is a risk_score alert on a 35.66 USD online purchase in billing region unknown. Graph history shows 1 prior purchases in that region. Pattern is account_takeover; fraud probability 0.73. Episode size 3; exposure 138.39 USD. Verdict is fraud.",
+    "summary": "HHG-013 is a risk_score alert on a 35.66 USD online purchase in billing region unknown. Graph history shows 1 prior purchases in that region. Pattern is account_takeover; fraud probability 0.84. Episode size 3; exposure 138.39 USD. Verdict is fraud.",
     "written_to_graph": true,
     "graph_case_id": "HHG-013"
   },
   "evidence_requests": [
     {
-      "type": "customer_validation",
+      "type": "step_up_auth",
       "asked_after_step": 4,
-      "assumed_response": "Customer states they did not make this purchase and still have the card."
+      "assumed_response": "Step-up authentication failed. Customer still has the card."
     }
   ],
   "next_best_actions": {
     "initial": [
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R8: uncertain with exposure or conflicting evidence"
+      },
       {
         "action": "CREATE_CASE",
         "route": "auto",

@@ -19,7 +19,10 @@ def investigation_view(case_id: str) -> dict[str, Any]:
         "edges": _edges(facts, answer),
         "timeline": _timeline(facts, answer),
         "approvals": _approvals(answer),
+        "queue": _queue(answer),
         "policy": _policy(answer),
+        "policy_trace": _policy_trace(answer),
+        "conflicts": _conflicts(answer),
     }
 
 
@@ -119,6 +122,59 @@ def _approvals(answer: Answer | None) -> list[dict[str, str]]:
         }
         for item in answer.next_best_actions.final
     ]
+
+
+def _queue(answer: Answer | None) -> list[dict[str, str]]:
+    if answer is None:
+        return []
+    rows = []
+    for item in answer.next_best_actions.final:
+        status = "executed" if item.route.value == "auto" else "awaiting_approval"
+        rows.append(
+            {
+                "action": item.action.value,
+                "route": item.route.value,
+                "reason": item.reason,
+                "status": status,
+            }
+        )
+    return rows
+
+
+def _policy_trace(answer: Answer | None) -> list[dict[str, str]]:
+    if answer is None:
+        return []
+    return [
+        {
+            "action": item.action.value,
+            "route": item.route.value,
+            "reason": item.reason,
+            "stage": "initial",
+        }
+        for item in answer.next_best_actions.initial
+    ] + [
+        {
+            "action": item.action.value,
+            "route": item.route.value,
+            "reason": item.reason,
+            "stage": "final",
+        }
+        for item in answer.next_best_actions.final
+    ]
+
+
+def _conflicts(answer: Answer | None) -> dict[str, list[str]]:
+    supports_fraud: list[str] = []
+    supports_legit: list[str] = []
+    if answer is None:
+        return {"supports_fraud": supports_fraud, "supports_legitimate": supports_legit}
+    for item in answer.case.evidence:
+        claim = item.claim
+        if claim.startswith("Supports fraud"):
+            supports_fraud.append(claim)
+        elif claim.startswith("Supports legitimate"):
+            supports_legit.append(claim)
+    return {"supports_fraud": supports_fraud, "supports_legitimate": supports_legit}
 
 
 def _policy(answer: Answer | None) -> dict[str, Any]:

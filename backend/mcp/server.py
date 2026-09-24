@@ -17,6 +17,12 @@ from backend.graph.tools import get_graph_tools
 mcp = FastMCP("traceguard-tigergraph")
 
 
+@mcp.tool(name="tigergraph__runQuery")
+def run_query(queryName: str, params: dict[str, Any] | None = None) -> list:
+    """Official-style TigerGraph MCP alias for runInstalledQuery."""
+    return get_graph_tools().run_installed_query(queryName, params or {})
+
+
 @mcp.tool(name="tigergraph__run_installed_query")
 def run_installed_query(queryName: str, params: dict[str, Any] | None = None) -> list:
     """Run an installed GSQL query on FraudGraph."""

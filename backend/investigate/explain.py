@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 import time
 import urllib.error
-import urllib.request
 from typing import Any
 
 from backend.config import settings
+from backend.llm import complete as llm_complete
 from backend.models.answer import Answer
 
 _SYSTEM = """Rewrite only the analyst summary for a finished fraud investigation.
@@ -48,13 +48,7 @@ def explain_answer(answer: Answer) -> Answer:
 
 
 def complete(user: str) -> tuple[dict[str, Any], int]:
-    payload = _post(user)
-    content = payload["choices"][0]["message"]["content"]
-    usage = payload.get("usage") or {}
-    parsed = json.loads(content)
-    if not isinstance(parsed, dict):
-        raise ValueError("LLM did not return a JSON object")
-    return parsed, int(usage.get("total_tokens") or 0)
+    return llm_complete(_SYSTEM, user)
 
 
 def _prompt(answer: Answer) -> str:
@@ -79,28 +73,3 @@ def _prompt(answer: Answer) -> str:
         },
         indent=2,
     )
-
-
-def _post(user: str) -> dict[str, Any]:
-    body = json.dumps(
-        {
-            "model": settings.llm_model,
-            "temperature": 0,
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": _SYSTEM},
-                {"role": "user", "content": user},
-            ],
-        }
-    ).encode("utf-8")
-    request = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
-        data=body,
-        headers={
-            "Authorization": f"Bearer {settings.openai_api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.loads(response.read().decode("utf-8"))

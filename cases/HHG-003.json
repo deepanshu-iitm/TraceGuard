@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.08,
+    "fraud_probability": 0.13,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -117,6 +117,15 @@
         ]
       },
       {
+        "claim": "Supports legitimate: flagged amount and channel match established spend on card C08623-K2.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C08623-K2, region=330.0)",
+        "entity_ids": [
+          "C08623-K2",
+          "3530164"
+        ]
+      },
+      {
         "claim": "Customer denied the purchase and still has the card.",
         "source": "customer",
         "ref": "trigger:customer_report",
@@ -154,10 +163,12 @@
       "CC-2817",
       "CC-2935",
       "CC-3327",
-      "CC-3682",
-      "CC-4957"
+      "CC-0003",
+      "CC-0405",
+      "CC-0696",
+      "CC-0873"
     ],
-    "summary": "HHG-003 is a customer_report alert on a 49.00 USD in_person purchase in billing region 330.0. Graph history shows 42 prior purchases in that region. Pattern is none; fraud probability 0.08. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "summary": "HHG-003 is a customer_report alert on a 49.00 USD in_person purchase in billing region 330.0. Graph history shows 42 prior purchases in that region. Pattern is none; fraud probability 0.13. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
     "written_to_graph": true,
     "graph_case_id": "HHG-003"
   },
@@ -207,7 +218,7 @@
     "total_amount_usd": 0.0,
     "activity_dates": []
   },
-  "stop_reason": "Fraud probability 0.08 is supported by 2 independent pieces of evidence.",
+  "stop_reason": "Fraud probability 0.13 is supported by 2 independent pieces of evidence.",
   "tool_calls": 6,
   "tokens": 0,
   "latency_s": 0.0

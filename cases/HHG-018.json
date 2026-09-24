@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.1,
+    "fraud_probability": 0.15,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -758,6 +758,15 @@
         ]
       },
       {
+        "claim": "Supports legitimate: flagged amount and channel match established spend on card C02354-K2.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C02354-K2, region=126.0)",
+        "entity_ids": [
+          "C02354-K2",
+          "3491361"
+        ]
+      },
+      {
         "claim": "Customer denied the purchase and still has the card.",
         "source": "customer",
         "ref": "trigger:customer_report",
@@ -795,24 +804,12 @@
       "CC-0405",
       "CC-0454",
       "CC-0631",
-      "CC-1450",
-      "CC-1699",
-      "CC-2051",
-      "CC-2187",
-      "CC-2432",
-      "CC-2589",
-      "CC-3085",
-      "CC-3537",
-      "CC-3634",
-      "CC-3899",
-      "CC-4070",
-      "CC-4436",
-      "CC-4721",
-      "CC-4942",
-      "CC-5441",
-      "CC-5558"
+      "CC-0003",
+      "CC-0696",
+      "CC-0873",
+      "CC-1313"
     ],
-    "summary": "HHG-018 is a customer_report alert on a 39.08 USD in_person purchase in billing region 126.0. Graph history shows 565 prior purchases in that region. Pattern is none; fraud probability 0.10. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "summary": "HHG-018 is a customer_report alert on a 39.08 USD in_person purchase in billing region 126.0. Graph history shows 565 prior purchases in that region. Pattern is none; fraud probability 0.15. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
     "written_to_graph": true,
     "graph_case_id": "HHG-018"
   },
@@ -862,7 +859,7 @@
     "total_amount_usd": 0.0,
     "activity_dates": []
   },
-  "stop_reason": "Fraud probability 0.10 is supported by 2 independent pieces of evidence.",
+  "stop_reason": "Fraud probability 0.15 is supported by 2 independent pieces of evidence.",
   "tool_calls": 6,
   "tokens": 0,
   "latency_s": 0.0

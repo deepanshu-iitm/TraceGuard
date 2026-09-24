@@ -83,6 +83,16 @@ def rare_email_cards(facts: CaseFacts) -> tuple[str, ...]:
     return ()
 
 
+def rare_region_cards(facts: CaseFacts) -> tuple[str, ...]:
+    """Common billing regions are not a shared origin. A tight cluster is."""
+    others = tuple(
+        card_id for card_id in facts.region_card_ids if card_id != facts.card.card_id
+    )
+    if 1 <= len(others) <= 6:
+        return others
+    return ()
+
+
 def connected_card_ids(facts: CaseFacts) -> list[str]:
     cards = {
         card_id for card_id in facts.device_card_ids if card_id != facts.card.card_id
@@ -134,6 +144,27 @@ def detect_pattern(facts: CaseFacts) -> FraudPattern:
     return FraudPattern.NONE
 
 
+def evidence_conflicts(facts: CaseFacts) -> bool:
+    supports_legit = known_spend(facts) or bool(facts.prior_in_region())
+    supports_fraud = bool(
+        new_device(facts)
+        or shared_origin(facts)
+        or account_takeover(facts)
+        or card_testing(facts)[0]
+        or undocumented_coordinated(facts)
+        or (facts.flagged.channel == "in_person" and not facts.prior_in_region())
+    )
+    return supports_legit and supports_fraud
+
+
+def closed_pattern_rate(pattern: FraudPattern) -> float:
+    rates = _closed_pattern_rates()
+    confirmed, total = rates.get(pattern.value, (0, 0))
+    if total < 20:
+        return 0.45
+    return confirmed / total
+
+
 def calibrated_probability(facts: CaseFacts, pattern: FraudPattern) -> float:
     score = max(0.0, min(1.0, facts.flagged.risk_score))
     z = -1.35 + 1.15 * score
@@ -157,8 +188,13 @@ def calibrated_probability(facts: CaseFacts, pattern: FraudPattern) -> float:
         z += 0.35
     closed_fraud = sum(1 for case in facts.closed_cases if case.outcome == "confirmed_fraud")
     z += min(0.4, 0.04 * closed_fraud)
-    probability = 1.0 / (1.0 + exp(-z))
-    return round(min(0.97, max(0.04, probability)), 2)
+    logistic = 1.0 / (1.0 + exp(-z))
+    historical = closed_pattern_rate(pattern)
+    if pattern is FraudPattern.NONE and known_spend(facts):
+        mixed = 0.85 * logistic + 0.15 * historical
+    else:
+        mixed = 0.6 * logistic + 0.4 * historical
+    return round(min(0.97, max(0.04, mixed)), 2)
 
 
 def episode_txns(facts: CaseFacts, pattern: FraudPattern) -> list[TxnFact]:
@@ -228,3 +264,28 @@ def _median(values: list[float]) -> float:
     if len(ordered) % 2:
         return ordered[mid]
     return (ordered[mid - 1] + ordered[mid]) / 2
+
+
+_RATES: dict[str, tuple[int, int]] | None = None
+
+
+def _closed_pattern_rates() -> dict[str, tuple[int, int]]:
+    global _RATES
+    if _RATES is not None:
+        return _RATES
+    from collections import defaultdict
+    import csv
+
+    from backend.graph.export import PROCESSED_DIR
+
+    path = PROCESSED_DIR / "vertices_closed_case.csv"
+    counts: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    if path.is_file():
+        with path.open(encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle):
+                pattern = row.get("pattern") or "none"
+                counts[pattern][1] += 1
+                if row.get("outcome") == "confirmed_fraud":
+                    counts[pattern][0] += 1
+    _RATES = {pattern: (fraud, total) for pattern, (fraud, total) in counts.items()}
+    return _RATES

@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.05,
+    "fraud_probability": 0.11,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -73,6 +73,15 @@
         ]
       },
       {
+        "claim": "Supports legitimate: flagged amount and channel match established spend on card C04570-K1.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C04570-K1, region=204.0)",
+        "entity_ids": [
+          "C04570-K1",
+          "3450629"
+        ]
+      },
+      {
         "claim": "Customer confirmed they made the 100.09 USD online purchase in billing region 204.0 and still have the card.",
         "source": "customer",
         "ref": "evidence_request:1",
@@ -106,9 +115,16 @@
       }
     ],
     "similar_prior_cases": [
-      "CC-1383"
+      "CC-1383",
+      "CC-4743",
+      "CC-4819",
+      "CC-0003",
+      "CC-0405",
+      "CC-0696",
+      "CC-0873",
+      "CC-1313"
     ],
-    "summary": "HHG-017 is a risk_score alert on a 100.09 USD online purchase in billing region 204.0. Graph history shows 5 prior purchases in that region. Pattern is none; fraud probability 0.05. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "summary": "HHG-017 is a risk_score alert on a 100.09 USD online purchase in billing region 204.0. Graph history shows 5 prior purchases in that region. Pattern is none; fraud probability 0.11. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
     "written_to_graph": true,
     "graph_case_id": "HHG-017"
   },

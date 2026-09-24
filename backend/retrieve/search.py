@@ -63,6 +63,43 @@ def retrieve_documents(
     return hits[:limit]
 
 
+def retrieve_similar_cases(
+    facts: CaseFacts, pattern: FraudPattern, limit: int = 8
+) -> list[str]:
+    """Closed-case memory: a few cases on this card, then similar notes graph-wide."""
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for case in facts.closed_cases[:4]:
+        seen.add(case.case_id)
+        ordered.append(case.case_id)
+    query = _query_tokens(facts, pattern)
+    ranked = sorted(
+        (
+            (_score(query, doc, pattern), doc)
+            for doc in _closed_case_docs()
+            if doc.entity_ids and doc.entity_ids[0] not in seen
+        ),
+        key=lambda pair: pair[0],
+        reverse=True,
+    )
+    for score, doc in ranked:
+        if score <= 0 or len(ordered) >= limit:
+            break
+        case_id = doc.entity_ids[0]
+        if case_id in seen:
+            continue
+        seen.add(case_id)
+        ordered.append(case_id)
+    for case in facts.closed_cases:
+        if len(ordered) >= limit:
+            break
+        if case.case_id in seen:
+            continue
+        seen.add(case.case_id)
+        ordered.append(case.case_id)
+    return ordered[:limit]
+
+
 def _best(
     query: set[str],
     docs: tuple[CorpusDoc, ...] | list[CorpusDoc],

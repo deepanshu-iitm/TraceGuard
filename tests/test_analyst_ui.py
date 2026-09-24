@@ -19,6 +19,9 @@ def test_analyst_page_is_served() -> None:
     assert "Neighborhood" in html
     assert "Timeline" in html
     assert "Approvals" in html
+    assert "Policy trace" in html
+    assert "Conflicts" in html
+    assert "Approval queue" in html
     assert "/graph/" in html
     assert "function escapeHtml" in html
     assert "sarBlock" in html

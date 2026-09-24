@@ -7,12 +7,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from backend.investigate.analysis import (
+    account_takeover,
     calibrated_probability,
     card_testing,
     connected_card_ids,
     detect_pattern,
     episode_exposure,
     episode_txns,
+    evidence_conflicts,
     known_spend,
     new_device as _new_device,
     pattern_description,
@@ -35,7 +37,7 @@ from backend.models.verdict import Verdict
 from backend.policy.actions import PolicyAction
 from backend.policy.rules import CustomerResponse, PolicySnapshot, RecommendedAction, recommend_actions
 from backend.policy.stopping import StopSnapshot, stop_decision
-from backend.retrieve import retrieve_documents
+from backend.retrieve import retrieve_documents, retrieve_similar_cases
 
 CASES_DIR = Path(__file__).resolve().parents[2] / "cases"
 
@@ -80,7 +82,9 @@ def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
     if recurring:
         pattern = FraudPattern.NONE
         graph_p = calibrated_probability(facts, pattern)
-    single_signal = pattern is FraudPattern.NONE and not disputed and not shared
+    conflicts = evidence_conflicts(facts)
+    step_up = (account_takeover(facts) or _new_device(facts)) and pattern is not FraudPattern.NONE
+    single_signal = not disputed and not shared and graph_p < 0.70 and not testing
     episode = tuple(episode_txns(facts, pattern))
     exposure = 0.0 if pattern is FraudPattern.NONE and not shared else episode_exposure(list(episode)) or abs(facts.flagged.amount)
     assumed: CustomerResponse | None
@@ -110,6 +114,7 @@ def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
             shared_origin=shared,
             coordinated_undocumented=undocumented,
             customer_dispute=True,
+            evidence_conflicts=conflicts,
         )
         assumed = CustomerResponse.DENY
         initial = recommend_actions(final_snap)
@@ -145,7 +150,10 @@ def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
         if not episode:
             episode = (facts.flagged,)
     else:
-        assumed = _assumed_response(facts, pattern, disputed)
+        assumed = _assumed_response(facts, pattern, disputed, graph_p, step_up)
+        request_type = (
+            EvidenceRequestType.STEP_UP_AUTH if step_up else EvidenceRequestType.CUSTOMER_VALIDATION
+        )
         initial = recommend_actions(
             PolicySnapshot(
                 fraud_probability=graph_p,
@@ -155,6 +163,8 @@ def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
                 card_testing=testing,
                 testing_large_purchase_cleared=cleared,
                 evidence_requested=assumed is not None,
+                evidence_conflicts=conflicts,
+                step_up_auth=step_up,
             )
         )
         final_snap = PolicySnapshot(
@@ -166,14 +176,16 @@ def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
             card_testing=testing,
             testing_large_purchase_cleared=cleared,
             evidence_requested=assumed is not None,
+            evidence_conflicts=conflicts,
+            step_up_auth=step_up,
         )
         final = recommend_actions(final_snap)
         if assumed is not None:
             requests.append(
                 EvidenceRequest(
-                    type=EvidenceRequestType.CUSTOMER_VALIDATION,
+                    type=request_type,
                     asked_after_step=4,
-                    assumed_response=_assumed_text(facts, assumed),
+                    assumed_response=_assumed_text(facts, assumed, request_type),
                 )
             )
 
@@ -250,7 +262,7 @@ def _build_answer(
                 documents,
                 affected,
             ),
-            similar_prior_cases=[case.case_id for case in facts.closed_cases],
+            similar_prior_cases=retrieve_similar_cases(facts, pattern),
             summary=_summary(facts, verdict, pattern, graph_p, affected, exposure_out),
             written_to_graph=True,
             graph_case_id=facts.case.case_id,
@@ -299,14 +311,20 @@ def _card_testing(facts: CaseFacts) -> tuple[bool, bool]:
 
 
 def _assumed_response(
-    facts: CaseFacts, pattern: FraudPattern, disputed: bool
+    facts: CaseFacts,
+    pattern: FraudPattern,
+    disputed: bool,
+    probability: float = 0.0,
+    step_up: bool = False,
 ) -> CustomerResponse | None:
     if disputed:
         return CustomerResponse.DENY
-    if pattern is FraudPattern.NONE and known_spend(facts):
-        return CustomerResponse.CONFIRM
     if pattern is FraudPattern.NONE:
         return CustomerResponse.CONFIRM
+    if step_up:
+        return CustomerResponse.DENY
+    if 0.15 < probability < 0.70:
+        return CustomerResponse.NO_REPLY
     return CustomerResponse.DENY
 
 
@@ -442,13 +460,42 @@ def _evidence(
         items.append(
             Evidence(
                 claim=(
-                    f"Billing region {facts.flagged.billing_region} appears on "
-                    f"{len(region_others)} other cards in the local 1-hop fan-out. "
-                    "Region sharing is recorded, not treated as proof of a shared origin."
+                    f"Billing region {facts.flagged.billing_region} also links "
+                    f"{len(region_others)} other card(s)."
+                    if 1 <= len(region_others) <= 6
+                    else (
+                        f"Billing region {facts.flagged.billing_region} appears on "
+                        f"{len(region_others)} other cards in the local 1-hop fan-out. "
+                        "Region sharing is recorded, not treated as proof of a shared origin."
+                    )
                 ),
                 source=EvidenceSource.GRAPH,
                 ref=f"query:region_fanout(r={facts.flagged.billing_region})",
                 entity_ids=[facts.card.card_id],
+            )
+        )
+    if known_spend(facts):
+        items.append(
+            Evidence(
+                claim=(
+                    "Supports legitimate: flagged amount and channel match established spend "
+                    f"on card {facts.card.card_id}."
+                ),
+                source=EvidenceSource.GRAPH,
+                ref=f"query:card_region_history(card_id={facts.card.card_id}, region={flagged.billing_region})",
+                entity_ids=[facts.card.card_id, flagged.txn_id],
+            )
+        )
+    if _new_device(facts) or shared_origin(facts) or account_takeover(facts):
+        items.append(
+            Evidence(
+                claim=(
+                    "Supports fraud: new device, mixed-channel takeover, or a tight shared-origin "
+                    "cluster is present on the neighborhood."
+                ),
+                source=EvidenceSource.GRAPH,
+                ref=f"query:shared_cards_on_device(d={facts.device_profile_id or facts.card.card_id})",
+                entity_ids=[facts.card.card_id, flagged.txn_id],
             )
         )
     if affected and len(affected) > 1:
@@ -472,6 +519,15 @@ def _evidence(
                     f"{flagged.channel} purchase in billing region {flagged.billing_region} "
                     "and still have the card."
                 ),
+                source=EvidenceSource.CUSTOMER,
+                ref="evidence_request:1",
+                entity_ids=[],
+            )
+        )
+    elif response is CustomerResponse.NO_REPLY:
+        items.append(
+            Evidence(
+                claim="Customer did not reply within 24 hours.",
                 source=EvidenceSource.CUSTOMER,
                 ref="evidence_request:1",
                 entity_ids=[],
@@ -523,14 +579,24 @@ def _summary(
     )
 
 
-def _assumed_text(facts: CaseFacts, response: CustomerResponse) -> str:
+def _assumed_text(
+    facts: CaseFacts,
+    response: CustomerResponse,
+    request_type: EvidenceRequestType | None = None,
+) -> str:
     flagged = facts.flagged
+    if request_type is EvidenceRequestType.STEP_UP_AUTH:
+        if response is CustomerResponse.DENY:
+            return "Step-up authentication failed. Customer still has the card."
+        return "Step-up authentication passed."
     if response is CustomerResponse.CONFIRM:
         return (
             f"Customer confirms they made the {flagged.amount:.2f} USD "
             f"{flagged.channel} purchase in billing region {flagged.billing_region} "
             "and still have the card."
         )
+    if response is CustomerResponse.NO_REPLY:
+        return "Customer did not reply within 24 hours."
     return "Customer states they did not make this purchase and still have the card."
 
 
@@ -550,6 +616,8 @@ def _what_changed(initial: list, final: list, assumed: CustomerResponse | None, 
         return "nothing"
     if assumed is CustomerResponse.CONFIRM:
         return "Customer confirmation replaced verification with close as not fraud."
+    if assumed is CustomerResponse.NO_REPLY:
+        return "No customer reply; monitor the card and decline pending authorizations."
     if assumed is CustomerResponse.DENY:
         return "Customer denial confirmed the block."
     return "nothing"

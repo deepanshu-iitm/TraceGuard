@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.06,
+    "fraud_probability": 0.11,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -73,11 +73,20 @@
         ]
       },
       {
-        "claim": "Billing region 494.0 appears on 2 other cards in the local 1-hop fan-out. Region sharing is recorded, not treated as proof of a shared origin.",
+        "claim": "Billing region 494.0 also links 2 other card(s).",
         "source": "graph",
         "ref": "query:region_fanout(r=494.0)",
         "entity_ids": [
           "C05876-K2"
+        ]
+      },
+      {
+        "claim": "Supports legitimate: flagged amount and channel match established spend on card C05876-K2.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C05876-K2, region=494.0)",
+        "entity_ids": [
+          "C05876-K2",
+          "3553342"
         ]
       },
       {
@@ -115,9 +124,15 @@
     ],
     "similar_prior_cases": [
       "CC-0003",
-      "CC-2370"
+      "CC-2370",
+      "CC-0405",
+      "CC-0696",
+      "CC-0873",
+      "CC-1313",
+      "CC-1383",
+      "CC-1589"
     ],
-    "summary": "HHG-012 is a risk_score alert on a 30.91 USD in_person purchase in billing region 494.0. Graph history shows 21 prior purchases in that region. Pattern is none; fraud probability 0.06. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "summary": "HHG-012 is a risk_score alert on a 30.91 USD in_person purchase in billing region 494.0. Graph history shows 21 prior purchases in that region. Pattern is none; fraud probability 0.11. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
     "written_to_graph": true,
     "graph_case_id": "HHG-012"
   },

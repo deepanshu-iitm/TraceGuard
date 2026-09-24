@@ -129,7 +129,16 @@
         "entity_ids": []
       }
     ],
-    "similar_prior_cases": [],
+    "similar_prior_cases": [
+      "CC-1925",
+      "CC-5558",
+      "CC-2121",
+      "CC-3778",
+      "CC-1736",
+      "CC-2860",
+      "CC-3422",
+      "CC-3566"
+    ],
     "summary": "HHG-006 is a customer_report alert on a 482.12 USD online purchase in billing region 264.0. Graph history shows 15 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.46. Episode size 5; exposure 1989.04 USD. Verdict is fraud.",
     "written_to_graph": true,
     "graph_case_id": "HHG-006"

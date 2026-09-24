@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.11,
+    "fraud_probability": 0.16,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -2397,6 +2397,15 @@
         ]
       },
       {
+        "claim": "Supports legitimate: flagged amount and channel match established spend on card C09933-K2.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C09933-K2, region=264.0)",
+        "entity_ids": [
+          "C09933-K2",
+          "3514948"
+        ]
+      },
+      {
         "claim": "Customer confirmed they made the 111.92 USD in_person purchase in billing region 264.0 and still have the card.",
         "source": "customer",
         "ref": "evidence_request:1",
@@ -2434,23 +2443,12 @@
       "CC-0657",
       "CC-0765",
       "CC-1228",
-      "CC-1524",
-      "CC-1682",
-      "CC-2565",
-      "CC-2834",
-      "CC-2986",
-      "CC-3136",
-      "CC-3439",
-      "CC-3821",
-      "CC-4196",
-      "CC-4277",
-      "CC-4455",
-      "CC-4597",
-      "CC-4787",
-      "CC-5092",
-      "CC-5521"
+      "CC-0003",
+      "CC-0405",
+      "CC-0696",
+      "CC-0873"
     ],
-    "summary": "HHG-007 is a risk_score alert on a 111.92 USD in_person purchase in billing region 264.0. Graph history shows 2220 prior purchases in that region. Pattern is none; fraud probability 0.11. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "summary": "HHG-007 is a risk_score alert on a 111.92 USD in_person purchase in billing region 264.0. Graph history shows 2220 prior purchases in that region. Pattern is none; fraud probability 0.16. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
     "written_to_graph": true,
     "graph_case_id": "HHG-007"
   },

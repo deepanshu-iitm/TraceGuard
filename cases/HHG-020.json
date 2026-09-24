@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_fraud",
     "verdict": "fraud",
-    "fraud_probability": 0.89,
+    "fraud_probability": 0.94,
     "pattern": "account_takeover",
     "pattern_description": "Online purchase 3509359 used a device not seen on this card, shortly after in-person activity. That mixed-channel shift is treated as stolen credentials rather than a stolen card number alone.",
     "affected_txn_ids": [
@@ -168,6 +168,15 @@
         ]
       },
       {
+        "claim": "Supports fraud: new device, mixed-channel takeover, or a tight shared-origin cluster is present on the neighborhood.",
+        "source": "graph",
+        "ref": "query:shared_cards_on_device(d=Trident/7.0 | Windows 10 | ie 11.0 for desktop | 1920x1080)",
+        "entity_ids": [
+          "C12265-K2",
+          "3509359"
+        ]
+      },
+      {
         "claim": "Episode reconstruction grouped 3 transactions around 3509359 using history, device, amount outliers, and NEXT edges 3501890, 3510096.",
         "source": "graph",
         "ref": "query:next_chain(t=3509359)",
@@ -206,9 +215,15 @@
     ],
     "similar_prior_cases": [
       "CC-2277",
-      "CC-2447"
+      "CC-2447",
+      "CC-0255",
+      "CC-0454",
+      "CC-4787",
+      "CC-5521",
+      "CC-1450",
+      "CC-2717"
     ],
-    "summary": "HHG-020 is a risk_score alert on a 125.08 USD online purchase in billing region 264.0. Graph history shows 82 prior purchases in that region. Pattern is account_takeover; fraud probability 0.89. Episode size 3; exposure 476.03 USD. Verdict is fraud.",
+    "summary": "HHG-020 is a risk_score alert on a 125.08 USD online purchase in billing region 264.0. Graph history shows 82 prior purchases in that region. Pattern is account_takeover; fraud probability 0.94. Episode size 3; exposure 476.03 USD. Verdict is fraud.",
     "written_to_graph": true,
     "graph_case_id": "HHG-020"
   },
@@ -270,7 +285,7 @@
       "2016-12-03"
     ]
   },
-  "stop_reason": "Fraud probability 0.89 is supported by 2 independent pieces of evidence.",
+  "stop_reason": "Fraud probability 0.94 is supported by 2 independent pieces of evidence.",
   "tool_calls": 6,
   "tokens": 0,
   "latency_s": 0.0

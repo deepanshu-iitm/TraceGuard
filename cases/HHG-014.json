@@ -98,6 +98,15 @@
         ]
       },
       {
+        "claim": "Supports fraud: new device, mixed-channel takeover, or a tight shared-origin cluster is present on the neighborhood.",
+        "source": "graph",
+        "ref": "query:shared_cards_on_device(d=SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080)",
+        "entity_ids": [
+          "C13487-K1",
+          "3478561"
+        ]
+      },
+      {
         "claim": "Episode reconstruction grouped 3 transactions around 3478561 using history, device, amount outliers, and NEXT edges 3477218, 3478886.",
         "source": "graph",
         "ref": "query:next_chain(t=3478561)",
@@ -134,7 +143,16 @@
         "entity_ids": []
       }
     ],
-    "similar_prior_cases": [],
+    "similar_prior_cases": [
+      "CC-1925",
+      "CC-5558",
+      "CC-2121",
+      "CC-3778",
+      "CC-1736",
+      "CC-2860",
+      "CC-3422",
+      "CC-3566"
+    ],
     "summary": "HHG-014 is a analyst_request alert on a 74.96 USD online purchase in billing region 191.0. Graph history shows 36 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.80. Episode size 3; exposure 142.00 USD. Verdict is fraud.",
     "written_to_graph": true,
     "graph_case_id": "HHG-014"

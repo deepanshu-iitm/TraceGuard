@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.09,
+    "fraud_probability": 0.14,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -10177,6 +10177,24 @@
         ]
       },
       {
+        "claim": "Supports legitimate: flagged amount and channel match established spend on card C11923-K2.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C11923-K2, region=)",
+        "entity_ids": [
+          "C11923-K2",
+          "3583368"
+        ]
+      },
+      {
+        "claim": "Supports fraud: new device, mixed-channel takeover, or a tight shared-origin cluster is present on the neighborhood.",
+        "source": "graph",
+        "ref": "query:shared_cards_on_device(d=SM-G610F Build/NRD90M |  | chrome 66.0 for android | )",
+        "entity_ids": [
+          "C11923-K2",
+          "3583368"
+        ]
+      },
+      {
         "claim": "Customer denied the purchase and still has the card.",
         "source": "customer",
         "ref": "trigger:customer_report",
@@ -10214,15 +10232,12 @@
       "CC-0290",
       "CC-1056",
       "CC-2247",
-      "CC-2673",
-      "CC-2799",
-      "CC-3039",
-      "CC-3206",
-      "CC-3905",
-      "CC-4501",
-      "CC-4743"
+      "CC-4743",
+      "CC-4819",
+      "CC-0657",
+      "CC-3761"
     ],
-    "summary": "HHG-011 is a customer_report alert on a 131.30 USD online purchase in billing region unknown. Graph history shows 9874 prior purchases in that region. Pattern is none; fraud probability 0.09. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
+    "summary": "HHG-011 is a customer_report alert on a 131.30 USD online purchase in billing region unknown. Graph history shows 9874 prior purchases in that region. Pattern is none; fraud probability 0.14. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
     "written_to_graph": true,
     "graph_case_id": "HHG-011"
   },
@@ -10272,7 +10287,7 @@
     "total_amount_usd": 0.0,
     "activity_dates": []
   },
-  "stop_reason": "Fraud probability 0.09 is supported by 2 independent pieces of evidence.",
+  "stop_reason": "Fraud probability 0.14 is supported by 2 independent pieces of evidence.",
   "tool_calls": 6,
   "tokens": 0,
   "latency_s": 0.0

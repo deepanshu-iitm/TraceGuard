@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from operator import add
 from typing import Annotated, Any, TypedDict
@@ -35,6 +36,7 @@ class InvestigateState(TypedDict, total=False):
     initial_actions: list[str]
     final_actions: list[str]
     tool_calls: int
+    tokens: int
     answer: Answer
     steps: Annotated[list[str], add]
 
@@ -56,7 +58,12 @@ def _facts(state: InvestigateState) -> dict:
     tools = get_graph_tools()
     live = bool(settings.tg_host.strip())
     calls = 1 if live else 0
-    for name, params in _selected_tools(facts):
+    tokens = 0
+    selected = _selected_tools(facts)
+    extra_tokens = 0
+    selected, extra_tokens = _maybe_llm_tools(facts, selected)
+    tokens += extra_tokens
+    for name, params in selected:
         if live and name == "get_case_facts":
             continue
         payload = _try_query(tools, name, params)
@@ -64,7 +71,7 @@ def _facts(state: InvestigateState) -> dict:
             continue
         facts = _apply_tool(facts, name, payload)
         calls += 1
-    return {"facts": facts, "tool_calls": calls, "steps": ["facts"]}
+    return {"facts": facts, "tool_calls": calls, "tokens": tokens, "steps": ["facts"]}
 
 
 def _selected_tools(facts: CaseFacts) -> list[tuple[str, dict[str, str]]]:
@@ -85,6 +92,49 @@ def _selected_tools(facts: CaseFacts) -> list[tuple[str, dict[str, str]]]:
     if facts.flagged.billing_region:
         selected.append(("region_fanout", {"r": facts.flagged.billing_region}))
     return selected
+
+
+_TOOL_SYSTEM = """Choose graph investigation tools. Reply JSON {"tools": ["name", ...]}.
+Only use names from the offered list. Always keep get_case_facts and investigate_txn.
+Do not invent IDs. Prefer fan-out and NEXT when a device, email, or region exists."""
+
+
+def _maybe_llm_tools(
+    facts: CaseFacts, selected: list[tuple[str, dict[str, str]]]
+) -> tuple[list[tuple[str, dict[str, str]]], int]:
+    if not settings.openai_api_key.strip():
+        return selected, 0
+    catalog = {name: params for name, params in selected}
+    try:
+        from backend.llm import complete
+
+        data, tokens = complete(
+            _TOOL_SYSTEM,
+            json.dumps(
+                {
+                    "case_id": facts.case.case_id,
+                    "channel": facts.flagged.channel,
+                    "device": facts.device_profile_id,
+                    "email": facts.flagged.recipient_email or facts.flagged.purchaser_email,
+                    "region": facts.flagged.billing_region,
+                    "offered": list(catalog),
+                }
+            ),
+        )
+    except Exception:
+        return selected, 0
+    names = data.get("tools")
+    if not isinstance(names, list):
+        return selected, tokens
+    kept = [
+        (name, catalog[name])
+        for name in names
+        if isinstance(name, str) and name in catalog
+    ]
+    for required in ("get_case_facts", "investigate_txn"):
+        if required in catalog and required not in {name for name, _params in kept}:
+            kept.insert(0, (required, catalog[required]))
+    return kept or selected, tokens
 
 
 def _try_query(tools: Any, name: str, params: dict[str, str]) -> list | None:
@@ -125,12 +175,16 @@ def _retrieve(state: InvestigateState) -> dict:
 
 
 def _compose(state: InvestigateState) -> dict:
+    answer = compose_answer(
+        state["facts"],
+        documents=state["documents"],
+        tool_calls=state.get("tool_calls", 6),
+    )
+    tokens = state.get("tokens") or 0
+    if tokens:
+        answer = answer.model_copy(update={"tokens": tokens})
     return {
-        "answer": compose_answer(
-            state["facts"],
-            documents=state["documents"],
-            tool_calls=state.get("tool_calls", 6),
-        ),
+        "answer": answer,
         "steps": ["compose"],
     }
 

@@ -19,6 +19,21 @@ def test_r1_weak_single_signal_verifies_before_block() -> None:
     )
 
 
+def test_r1_step_up_is_used_when_requested() -> None:
+    out = recommend_actions(
+        PolicySnapshot(
+            fraud_probability=0.61,
+            exposure_usd=77,
+            single_signal=True,
+            step_up_auth=True,
+        )
+    )
+    assert [item.action for item in out] == [
+        PolicyAction.STEP_UP_AUTH,
+        PolicyAction.CREATE_CASE,
+    ]
+
+
 def test_r2_shared_origin_files_and_monitors() -> None:
     assert _actions(
         PolicySnapshot(
