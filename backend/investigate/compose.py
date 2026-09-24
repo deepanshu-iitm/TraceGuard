@@ -320,8 +320,12 @@ def _new_device(facts: CaseFacts) -> bool:
     profile = facts.flagged.device_profile_id
     if not profile:
         return False
-    seen = {txn.device_profile_id for txn in facts.prior() if txn.device_profile_id}
-    return profile not in seen
+    prior = facts.prior()
+    seen = {txn.device_profile_id for txn in prior if txn.device_profile_id}
+    if seen:
+        return profile not in seen
+    # Savanna history vertices do not carry device ids. Do not treat that as a new device.
+    return not prior
 
 
 def _card_testing(facts: CaseFacts) -> tuple[bool, bool]:

@@ -7,6 +7,7 @@ from typing import Annotated, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
+from backend.config import settings
 from backend.graph.tools import get_graph_tools
 from backend.investigate.compose import compose_answer, decide_investigation
 from backend.investigate.explain import explain_answer
@@ -42,9 +43,11 @@ def investigate_state(case_id: str) -> InvestigateState:
 def _facts(state: InvestigateState) -> dict:
     facts = load_case_facts(state["case_id"])
     tools = get_graph_tools()
-    calls = 0
-    tools.run_installed_query("get_case_facts", {"t": facts.flagged.txn_id})
-    calls += 1
+    live = bool(settings.tg_host.strip())
+    calls = 1 if live else 0
+    if not live:
+        tools.run_installed_query("get_case_facts", {"t": facts.flagged.txn_id})
+        calls += 1
     tools.run_installed_query("investigate_txn", {"t": facts.flagged.txn_id})
     calls += 1
     if facts.device_profile_id:

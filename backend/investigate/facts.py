@@ -159,6 +159,9 @@ def _facts_from_payload(item: CasePackItem, payload: list) -> CaseFacts:
                     risk_score=float(row["attributes"].get("risk_score") or 0),
                     billing_region=str(row["attributes"].get("billing_region") or ""),
                     billing_country=str(row["attributes"].get("billing_country") or ""),
+                    device_profile_id=(
+                        profile if row["v_id"] == flagged_row["v_id"] else ""
+                    ),
                 )
                 for row in vertices(payload, "history")
             ),
