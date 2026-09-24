@@ -22,6 +22,7 @@ from backend.models.verdict import Verdict
 from backend.policy.actions import PolicyAction
 from backend.policy.rules import CustomerResponse, PolicySnapshot, recommend_actions
 from backend.policy.stopping import StopSnapshot, stop_decision
+from backend.retrieve import retrieve_documents
 
 CASES_DIR = Path(__file__).resolve().parents[2] / "cases"
 
@@ -157,7 +158,11 @@ def compose_answer(facts: CaseFacts) -> Answer:
             connected_card_ids=connected if verdict is not Verdict.LEGITIMATE else [],
             connected_device_profiles=_device_profiles(facts, verdict),
             exposure_usd=exposure_out,
-            evidence=_evidence(facts, assumed if not disputed else CustomerResponse.DENY),
+            evidence=_evidence(
+                facts,
+                assumed if not disputed else CustomerResponse.DENY,
+                pattern,
+            ),
             similar_prior_cases=[case.case_id for case in facts.closed_cases],
             summary=_summary(facts, verdict, pattern, graph_p),
             written_to_graph=True,
@@ -331,7 +336,9 @@ def _device_profiles(facts: CaseFacts, verdict: Verdict) -> list[str]:
     return [facts.flagged.device_profile_id]
 
 
-def _evidence(facts: CaseFacts, response: CustomerResponse | None) -> list[Evidence]:
+def _evidence(
+    facts: CaseFacts, response: CustomerResponse | None, pattern: FraudPattern
+) -> list[Evidence]:
     flagged = facts.flagged
     region_prior = facts.prior_in_region()
     items = [
@@ -389,6 +396,7 @@ def _evidence(facts: CaseFacts, response: CustomerResponse | None) -> list[Evide
                 entity_ids=[],
             )
         )
+    items.extend(retrieve_documents(facts, pattern))
     return items
 
 

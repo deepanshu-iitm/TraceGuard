@@ -68,6 +68,26 @@
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
+      },
+      {
+        "claim": "R2 Customer denies: When the customer denies the transaction, recommend BLOCK_CARD and CREATE_CASE. Add FILE_REPORT when exposure exceeds 1000 USD, a shared device is present, or another card's fraud is connected.",
+        "source": "document",
+        "ref": "document:policy:R2",
+        "entity_ids": []
+      },
+      {
+        "claim": "Out-of-region use: Card-present activity in a billing region with no prior history, while normal home activity may continue. One new region is not automatically fraud; travel can look the same.",
+        "source": "document",
+        "ref": "document:pattern:out_of_region_use",
+        "entity_ids": []
+      },
+      {
+        "claim": "Closed case CC-4743: Case CC-4743: model scored a $32.09 transaction at 0.96. Cardholder confirmed the purchase from a new phone. Device added to profile. Alert cleared.",
+        "source": "document",
+        "ref": "document:closed_case/CC-4743",
+        "entity_ids": [
+          "CC-4743"
+        ]
       }
     ],
     "similar_prior_cases": [

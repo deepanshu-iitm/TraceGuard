@@ -2385,6 +2385,26 @@
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
+      },
+      {
+        "claim": "R1 Verify before blocking on a weak signal: If the case rests on a single signal, including a risk score alone, and fraud probability is below 0.70, recommend VERIFY_WITH_CUSTOMER or STEP_UP_AUTH before any block.",
+        "source": "document",
+        "ref": "document:policy:R1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Out-of-region use: Card-present activity in a billing region with no prior history, while normal home activity may continue. One new region is not automatically fraud; travel can look the same.",
+        "source": "document",
+        "ref": "document:pattern:out_of_region_use",
+        "entity_ids": []
+      },
+      {
+        "claim": "Closed case CC-0003: Case CC-0003: model scored a $442.92 transaction at 0.91. Cardholder confirmed travel to the billing region in question. Alert cleared.",
+        "source": "document",
+        "ref": "document:closed_case/CC-0003",
+        "entity_ids": [
+          "CC-0003"
+        ]
       }
     ],
     "similar_prior_cases": [

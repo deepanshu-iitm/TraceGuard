@@ -137,6 +137,26 @@
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
+      },
+      {
+        "claim": "R2 Customer denies: When the customer denies the transaction, recommend BLOCK_CARD and CREATE_CASE. Add FILE_REPORT when exposure exceeds 1000 USD, a shared device is present, or another card's fraud is connected.",
+        "source": "document",
+        "ref": "document:policy:R2",
+        "entity_ids": []
+      },
+      {
+        "claim": "Card-not-present new device: Same as card-not-present fraud, but the identity record shows a device not previously seen on this account. Stronger evidence, not proof: legitimate customers also use new devices.",
+        "source": "document",
+        "ref": "document:pattern:card_not_present_new_device",
+        "entity_ids": []
+      },
+      {
+        "claim": "Closed case CC-0031: Case CC-0031: cardholder C11923 reported unrecognized activity on card C11923-K2. 1 transaction(s) between 2016-07-02 and 2016-07-02 totaling $20.36 were confirmed fraudulent. Online purchases from a device not previously seen on this account, inconsistent with the cardholder's history. Online transactions came from a Trident/7.0 on ie 11.0 for desktop. Card blocked and reissued. Customer reimbursed.",
+        "source": "document",
+        "ref": "document:closed_case/CC-0031",
+        "entity_ids": [
+          "CC-0031"
+        ]
       }
     ],
     "similar_prior_cases": [
