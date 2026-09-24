@@ -1,0 +1,123 @@
+{
+  "case_id": "HHG-012",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.12,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0.0,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3553342 is a 30.91 USD in_person product-W purchase in billing region 494.0 on 2016-12-18 04:00:31. Card C05876-K2 is a visa debit owned by C05876.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3553342)",
+        "entity_ids": [
+          "3553342",
+          "C05876-K2",
+          "C05876"
+        ]
+      },
+      {
+        "claim": "Region 494.0 has 21 prior purchases on this card before the alert.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C05876-K2, region=494.0)",
+        "entity_ids": [
+          "3009623",
+          "3009697",
+          "3045113",
+          "3158704",
+          "3160700",
+          "3166553",
+          "3168228",
+          "3168302",
+          "3189851",
+          "3204837",
+          "3214695",
+          "3215461",
+          "3221898",
+          "3226372",
+          "3249154",
+          "3382063",
+          "3417005",
+          "3486224",
+          "3486951",
+          "3497187",
+          "3537376",
+          "3553342"
+        ]
+      },
+      {
+        "claim": "Closed cases on this card: CC-0003 (cleared, none); CC-2370 (confirmed_fraud, card_not_present_fraud).",
+        "source": "graph",
+        "ref": "query:closed_cases(card_id=C05876-K2)",
+        "entity_ids": [
+          "CC-0003",
+          "CC-2370",
+          "3000607",
+          "3188990",
+          "3189081",
+          "3188990"
+        ]
+      },
+      {
+        "claim": "Customer confirmed they made the 30.91 USD in_person purchase in billing region 494.0 and still have the card.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0003",
+      "CC-2370"
+    ],
+    "summary": "HHG-012 is a risk_score alert on a 30.91 USD in_person purchase in billing region 494.0. Graph history shows 21 prior purchases in that region. Pattern is none; fraud probability 0.12. Verdict is legitimate.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer confirms they made the 30.91 USD in_person purchase in billing region 494.0 and still have the card."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: the alert is a single weak signal; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: evidence requested from the customer"
+      }
+    ],
+    "final": [
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: customer confirmed the transaction"
+      }
+    ],
+    "what_changed": "Customer confirmation replaced verification with close as not fraud."
+  },
+  "sar": {
+    "file": false,
+    "reason": "R3: customer confirmed; FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A verification response settled the question (confirm).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

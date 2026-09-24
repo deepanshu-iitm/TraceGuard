@@ -19,6 +19,22 @@ def test_r1_weak_single_signal_verifies_before_block() -> None:
     )
 
 
+def test_r2_shared_origin_files_and_monitors() -> None:
+    assert _actions(
+        PolicySnapshot(
+            fraud_probability=0.8,
+            exposure_usd=100,
+            customer_response=CustomerResponse.DENY,
+            shared_origin=True,
+        )
+    ) == [
+        PolicyAction.BLOCK_CARD,
+        PolicyAction.CREATE_CASE,
+        PolicyAction.FILE_REPORT,
+        PolicyAction.MONITOR_CONNECTED_CARDS,
+    ]
+
+
 def test_r2_deny_blocks_and_files_when_exposure_is_high() -> None:
     out = recommend_actions(
         PolicySnapshot(

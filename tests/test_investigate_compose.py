@@ -40,3 +40,12 @@ def test_composer_returns_schema_valid_answer_for_a_customer_report() -> None:
     assert answer.sar.file is (
         any(item.action is PolicyAction.FILE_REPORT for item in answer.next_best_actions.final)
     )
+
+
+def test_composer_treats_hhg014_shared_device_as_fraud() -> None:
+    answer = compose_answer(load_case_facts("HHG-014"))
+    assert answer.case.verdict is Verdict.FRAUD
+    assert PolicyAction.FILE_REPORT in [item.action for item in answer.next_best_actions.final]
+    assert PolicyAction.MONITOR_CONNECTED_CARDS in [
+        item.action for item in answer.next_best_actions.final
+    ]

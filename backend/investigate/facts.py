@@ -64,6 +64,7 @@ class CaseFacts:
     history: tuple[TxnFact, ...]
     closed_cases: tuple[ClosedCaseFact, ...]
     device_profile_id: str
+    device_card_ids: tuple[str, ...]
 
     def prior(self) -> tuple[TxnFact, ...]:
         return tuple(txn for txn in self.history if txn.ts < self.flagged.ts)
@@ -88,6 +89,10 @@ def load_case_facts(case_id: str, processed_dir: Path | None = None) -> CaseFact
         index.closed[closed_id]
         for closed_id in sorted(index.on_card.get(item.card_id, ()))
     )
+    profile = flagged.device_profile_id
+    device_cards = index.cards_by_device.get(profile, ())
+    if item.card_id not in device_cards:
+        device_cards = device_cards + (item.card_id,)
     return CaseFacts(
         case=item,
         flagged=flagged,
@@ -95,7 +100,8 @@ def load_case_facts(case_id: str, processed_dir: Path | None = None) -> CaseFact
         customer_card_ids=tuple(sorted(index.owns.get(item.customer_id, ()))),
         history=history,
         closed_cases=closed,
-        device_profile_id=flagged.device_profile_id,
+        device_profile_id=profile,
+        device_card_ids=tuple(sorted(device_cards)),
     )
 
 
@@ -115,6 +121,7 @@ class _GraphIndex:
     owns: dict[str, tuple[str, ...]]
     on_card: dict[str, tuple[str, ...]]
     device: dict[str, str]
+    cards_by_device: dict[str, tuple[str, ...]]
 
     def txn(self, txn_id: str) -> TxnFact:
         try:
@@ -208,6 +215,14 @@ def _load_index(processed_dir: Path) -> _GraphIndex:
         txn_id: replace(txn, device_profile_id=device.get(txn_id, ""))
         for txn_id, txn in txns.items()
     }
+    txn_to_card = {
+        txn_id: card_id for card_id, txn_ids in made.items() for txn_id in txn_ids
+    }
+    cards_by_device: dict[str, set[str]] = defaultdict(set)
+    for txn_id, profile in device.items():
+        card_id = txn_to_card.get(txn_id)
+        if card_id:
+            cards_by_device[profile].add(card_id)
     return _GraphIndex(
         txns=txns,
         cards=cards,
@@ -216,6 +231,9 @@ def _load_index(processed_dir: Path) -> _GraphIndex:
         owns={customer_id: tuple(card_ids) for customer_id, card_ids in owns.items()},
         on_card={card_id: tuple(case_ids) for card_id, case_ids in on_card.items()},
         device=device,
+        cards_by_device={
+            profile: tuple(sorted(card_ids)) for profile, card_ids in cards_by_device.items()
+        },
     )
 
 

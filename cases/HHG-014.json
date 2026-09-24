@@ -1,0 +1,135 @@
+{
+  "case_id": "HHG-014",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.8,
+    "pattern": "card_not_present_fraud",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3478561"
+    ],
+    "first_suspicious_txn_id": "3478561",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080"
+    ],
+    "exposure_usd": 74.96,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3478561 is a 74.96 USD online product-C purchase in billing region 191.0 on 2016-11-22 16:11:00. Card C13487-K1 is a mastercard debit owned by C13487.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3478561)",
+        "entity_ids": [
+          "3478561",
+          "C13487-K1",
+          "C13487"
+        ]
+      },
+      {
+        "claim": "Region 191.0 has 36 prior purchases on this card before the alert.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C13487-K1, region=191.0)",
+        "entity_ids": [
+          "3008103",
+          "3033906",
+          "3048762",
+          "3060144",
+          "3064061",
+          "3101009",
+          "3132954",
+          "3156179",
+          "3160002",
+          "3170774",
+          "3179654",
+          "3197482",
+          "3221711",
+          "3228563",
+          "3232776",
+          "3245742",
+          "3266679",
+          "3284106",
+          "3307900",
+          "3323111",
+          "3326424",
+          "3330877",
+          "3353237",
+          "3358389",
+          "3364272",
+          "3378558",
+          "3403715",
+          "3412468",
+          "3432321",
+          "3438604",
+          "3448940",
+          "3457509",
+          "3458103",
+          "3458865",
+          "3460634",
+          "3477218",
+          "3478561"
+        ]
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "HHG-014 is a analyst_request alert on a 74.96 USD online purchase in billing region 191.0. Graph history shows 36 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.80. Verdict is fraud.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R6: shared origin across cards"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "R6: shared origin across cards"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: shared origin across cards"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R6: shared origin across cards"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "R6: shared origin across cards"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: shared origin across cards"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": true,
+    "reason": "R6: shared origin or high-exposure confirmed activity",
+    "narrative": "On 2016-11-22, card C13487-K1 belonging to customer C13487 was used for a 74.96 USD online transaction 3478561 in billing region 191.0, country 87.0. The product code was C. Graph neighborhood review found this activity inconsistent with the cardholder's established pattern or linked it to a shared origin. The investigation treated the purchase as unauthorized. Connected cards on the same device profile, if any, are recommended for monitoring. The flagged card is recommended for restriction pending reissue. Total unauthorized amount: 74.96 USD. This report is filed so a regulator can review the episode on its own.",
+    "subjects": [
+      "C13487",
+      "C13487-K1"
+    ],
+    "total_amount_usd": 74.96,
+    "activity_dates": [
+      "2016-11-22",
+      "2016-11-22"
+    ]
+  },
+  "stop_reason": "Further steps are unlikely to change the decision.",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

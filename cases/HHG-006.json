@@ -1,0 +1,108 @@
+{
+  "case_id": "HHG-006",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.58,
+    "pattern": "card_not_present_fraud",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3476682"
+    ],
+    "first_suspicious_txn_id": "3476682",
+    "connected_card_ids": [
+      "C02354-K2",
+      "C07987-K2",
+      "C09933-K2"
+    ],
+    "connected_device_profiles": [
+      "Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080"
+    ],
+    "exposure_usd": 482.12,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3476682 is a 482.12 USD online product-C purchase in billing region 264.0 on 2016-11-21 20:30:00. Card C07297-K1 is a mastercard debit owned by C07297.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3476682)",
+        "entity_ids": [
+          "3476682",
+          "C07297-K1",
+          "C07297"
+        ]
+      },
+      {
+        "claim": "Region 264.0 has 15 prior purchases on this card before the alert.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C07297-K1, region=264.0)",
+        "entity_ids": [
+          "3012743",
+          "3036242",
+          "3302665",
+          "3332599",
+          "3336864",
+          "3378534",
+          "3401829",
+          "3416525",
+          "3417709",
+          "3419224",
+          "3460711",
+          "3463839",
+          "3464219",
+          "3474057",
+          "3476602",
+          "3476682"
+        ]
+      },
+      {
+        "claim": "Customer denied the purchase and still has the card.",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "HHG-006 is a customer_report alert on a 482.12 USD online purchase in billing region 264.0. Graph history shows 15 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.58. Verdict is fraud.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: customer denied the transaction"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: customer denied the transaction"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A verification response settled the question (deny).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

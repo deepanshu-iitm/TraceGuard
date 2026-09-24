@@ -67,6 +67,8 @@ def recommend_actions(snapshot: PolicySnapshot) -> list[RecommendedAction]:
         _add(actions, PolicyAction.CREATE_CASE, "R2", snapshot)
         if snapshot.exposure_usd > 1000 or snapshot.shared_origin or snapshot.linked_other_card_fraud:
             _add(actions, PolicyAction.FILE_REPORT, "R2", snapshot)
+        if snapshot.shared_origin:
+            _add(actions, PolicyAction.MONITOR_CONNECTED_CARDS, "R6", snapshot)
         if snapshot.n_confirmed_fraud_cards >= 2 or snapshot.credentials_compromised:
             _add(actions, PolicyAction.BLOCK_ALL_CARDS, "R10", snapshot)
         return _apply_r10(actions, snapshot)

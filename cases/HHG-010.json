@@ -1,0 +1,144 @@
+{
+  "case_id": "HHG-010",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.74,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3506725"
+    ],
+    "first_suspicious_txn_id": "3506725",
+    "connected_card_ids": [
+      "C02354-K2",
+      "C07987-K2"
+    ],
+    "connected_device_profiles": [
+      "Windows | Windows 10 | edge 16.0 | 1366x768"
+    ],
+    "exposure_usd": 1000.03,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3506725 is a 1000.03 USD online product-R purchase in billing region 469.0 on 2016-12-02 15:18:27. Card C10434-K1 is a visa credit owned by C10434.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3506725)",
+        "entity_ids": [
+          "3506725",
+          "C10434-K1",
+          "C10434"
+        ]
+      },
+      {
+        "claim": "Region 469.0 has 24 prior purchases on this card before the alert.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C10434-K1, region=469.0)",
+        "entity_ids": [
+          "3016377",
+          "3053503",
+          "3070986",
+          "3075894",
+          "3078052",
+          "3082968",
+          "3087486",
+          "3091950",
+          "3121617",
+          "3157522",
+          "3193185",
+          "3237339",
+          "3237387",
+          "3282542",
+          "3282661",
+          "3329022",
+          "3350771",
+          "3351935",
+          "3392418",
+          "3397310",
+          "3411190",
+          "3419055",
+          "3475344",
+          "3492086",
+          "3506725"
+        ]
+      },
+      {
+        "claim": "Closed cases on this card: CC-0873 (cleared, none).",
+        "source": "graph",
+        "ref": "query:closed_cases(card_id=C10434-K1)",
+        "entity_ids": [
+          "CC-0873",
+          "3076736"
+        ]
+      },
+      {
+        "claim": "Customer denied the purchase and still has the card.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0873"
+    ],
+    "summary": "HHG-010 is a risk_score alert on a 1000.03 USD online purchase in billing region 469.0. Graph history shows 24 prior purchases in that region. Pattern is card_not_present_new_device; fraud probability 0.74. Verdict is fraud.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer states they did not make this purchase and still have the card."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R8: uncertain with exposure or conflicting evidence"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: evidence requested from the customer"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "R2: customer denied the transaction"
+      }
+    ],
+    "what_changed": "Customer denial confirmed the block."
+  },
+  "sar": {
+    "file": true,
+    "reason": "R6: shared origin or high-exposure confirmed activity",
+    "narrative": "On 2016-12-02, card C10434-K1 belonging to customer C10434 was used for a 1000.03 USD online transaction 3506725 in billing region 469.0, country 87.0. The product code was R. Graph neighborhood review found this activity inconsistent with the cardholder's established pattern or linked it to a shared origin. The investigation treated the purchase as unauthorized. Connected cards on the same device profile, if any, are recommended for monitoring. The flagged card is recommended for restriction pending reissue. Total unauthorized amount: 1000.03 USD. This report is filed so a regulator can review the episode on its own.",
+    "subjects": [
+      "C10434",
+      "C10434-K1"
+    ],
+    "total_amount_usd": 1000.03,
+    "activity_dates": [
+      "2016-12-02",
+      "2016-12-02"
+    ]
+  },
+  "stop_reason": "A verification response settled the question (deny).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

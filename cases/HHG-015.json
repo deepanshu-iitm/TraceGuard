@@ -1,0 +1,114 @@
+{
+  "case_id": "HHG-015",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.74,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3464869"
+    ],
+    "first_suspicious_txn_id": "3464869",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050"
+    ],
+    "exposure_usd": 599.94,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3464869 is a 599.94 USD online product-R purchase in billing region 327.0 on 2016-11-17 14:03:36. Card C03042-K1 is a mastercard credit owned by C03042.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3464869)",
+        "entity_ids": [
+          "3464869",
+          "C03042-K1",
+          "C03042"
+        ]
+      },
+      {
+        "claim": "Region 327.0 has 0 prior purchases on this card before the alert.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C03042-K1, region=327.0)",
+        "entity_ids": [
+          "3464869"
+        ]
+      },
+      {
+        "claim": "Closed cases on this card: CC-0615 (confirmed_fraud, card_not_present_new_device); CC-1313 (cleared, none); CC-3886 (confirmed_fraud, card_not_present_new_device).",
+        "source": "graph",
+        "ref": "query:closed_cases(card_id=C03042-K1)",
+        "entity_ids": [
+          "CC-0615",
+          "CC-1313",
+          "CC-3886",
+          "3051990",
+          "3051990",
+          "3113745",
+          "3292070",
+          "3292070"
+        ]
+      },
+      {
+        "claim": "Customer denied the purchase and still has the card.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0615",
+      "CC-1313",
+      "CC-3886"
+    ],
+    "summary": "HHG-015 is a risk_score alert on a 599.94 USD online purchase in billing region 327.0. Graph history shows 0 prior purchases in that region. Pattern is card_not_present_new_device; fraud probability 0.74. Verdict is fraud.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer states they did not make this purchase and still have the card."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R8: uncertain with exposure or conflicting evidence"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: evidence requested from the customer"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: customer denied the transaction"
+      }
+    ],
+    "what_changed": "Customer denial confirmed the block."
+  },
+  "sar": {
+    "file": false,
+    "reason": "FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A verification response settled the question (deny).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

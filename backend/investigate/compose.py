@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from backend.investigate.facts import CaseFacts, ClosedCaseFact, load_case_facts
+from backend.investigate.facts import CaseFacts, ClosedCaseFact, TxnFact, load_case_facts
 from backend.models.answer import (
     ActionRecommendation,
     Answer,
@@ -45,16 +45,21 @@ def compose_answer(facts: CaseFacts) -> Answer:
     graph_p = _probability(facts, pattern)
     testing, cleared = _card_testing(facts)
     disputed = facts.case.trigger_type is TriggerType.CUSTOMER_REPORT
-    recurring = disputed and _known_spend(facts)
-    single_signal = pattern is FraudPattern.NONE and not disputed
-    exposure = 0.0 if pattern is FraudPattern.NONE else abs(facts.flagged.amount)
+    shared = _shared_origin(facts)
+    recurring = disputed and _known_spend(facts) and not shared
+    if recurring:
+        pattern = FraudPattern.NONE
+        graph_p = 0.12
+    single_signal = pattern is FraudPattern.NONE and not disputed and not shared
+    exposure = 0.0 if pattern is FraudPattern.NONE and not shared else abs(facts.flagged.amount)
     assumed: CustomerResponse | None
     requests: list[EvidenceRequest] = []
+    connected = [card_id for card_id in facts.device_card_ids if card_id != facts.card.card_id]
 
     if recurring:
         final_snap = PolicySnapshot(
             fraud_probability=graph_p,
-            exposure_usd=exposure,
+            exposure_usd=0.0,
             pattern=pattern,
             disputed_but_recurring=True,
             customer_dispute=True,
@@ -70,11 +75,27 @@ def compose_answer(facts: CaseFacts) -> Answer:
             customer_response=CustomerResponse.DENY,
             card_testing=testing,
             testing_large_purchase_cleared=cleared,
+            shared_origin=shared,
             customer_dispute=True,
         )
         assumed = CustomerResponse.DENY
         initial = recommend_actions(final_snap)
         final = initial
+    elif shared:
+        final_snap = PolicySnapshot(
+            fraud_probability=max(graph_p, 0.80),
+            exposure_usd=abs(facts.flagged.amount),
+            pattern=pattern if pattern is not FraudPattern.NONE else FraudPattern.CARD_NOT_PRESENT_FRAUD,
+            shared_origin=True,
+            card_testing=testing,
+            testing_large_purchase_cleared=cleared,
+        )
+        graph_p = final_snap.fraud_probability
+        pattern = final_snap.pattern
+        assumed = None
+        initial = recommend_actions(final_snap)
+        final = initial
+        exposure = abs(facts.flagged.amount)
     else:
         assumed = _assumed_response(facts, pattern, disputed)
         initial = recommend_actions(
@@ -133,7 +154,7 @@ def compose_answer(facts: CaseFacts) -> Answer:
             pattern_description="",
             affected_txn_ids=affected,
             first_suspicious_txn_id="" if not affected else affected[0],
-            connected_card_ids=[],
+            connected_card_ids=connected if verdict is not Verdict.LEGITIMATE else [],
             connected_device_profiles=_device_profiles(facts, verdict),
             exposure_usd=exposure_out,
             evidence=_evidence(facts, assumed if not disputed else CustomerResponse.DENY),
@@ -169,16 +190,24 @@ def _pattern(facts: CaseFacts) -> FraudPattern:
     testing, _cleared = _card_testing(facts)
     if testing:
         return FraudPattern.CARD_TESTING
+    if _shared_origin(facts) and facts.flagged.channel == "online":
+        if _new_device(facts):
+            return FraudPattern.CARD_NOT_PRESENT_NEW_DEVICE
+        return FraudPattern.CARD_NOT_PRESENT_FRAUD
+    if _known_spend(facts):
+        return FraudPattern.NONE
     if facts.flagged.channel == "online" and _new_device(facts):
         return FraudPattern.CARD_NOT_PRESENT_NEW_DEVICE
     if facts.flagged.channel == "in_person" and not facts.prior_in_region():
         return FraudPattern.OUT_OF_REGION_USE
-    if facts.flagged.channel == "online" and not _amount_matches_region(facts):
+    if facts.flagged.channel == "online":
         return FraudPattern.CARD_NOT_PRESENT_FRAUD
     return FraudPattern.NONE
 
 
 def _probability(facts: CaseFacts, pattern: FraudPattern) -> float:
+    if _shared_origin(facts):
+        return 0.80
     if pattern is FraudPattern.NONE and _known_spend(facts):
         return 0.12
     if pattern is FraudPattern.CARD_TESTING:
@@ -193,14 +222,42 @@ def _probability(facts: CaseFacts, pattern: FraudPattern) -> float:
 
 
 def _known_spend(facts: CaseFacts) -> bool:
-    return len(facts.prior_in_region()) >= 3 and _amount_matches_region(facts)
+    prior = facts.prior()
+    if not prior:
+        return False
+    same_channel = [txn for txn in prior if txn.channel == facts.flagged.channel]
+    if len(same_channel) < 3 or len(same_channel) < 0.1 * len(prior):
+        return False
+    peers = facts.prior_in_region() if facts.flagged.billing_region else tuple(same_channel)
+    return _amount_matches(facts, peers)
 
 
 def _amount_matches_region(facts: CaseFacts) -> bool:
-    prior = facts.prior_in_region()
-    if not prior:
+    return _amount_matches(facts, facts.prior_in_region())
+
+
+def _amount_matches(facts: CaseFacts, prior: tuple[TxnFact, ...] | None = None) -> bool:
+    pool = facts.prior_in_region() if prior is None else prior
+    if not pool:
         return False
-    return any(abs(txn.amount - facts.flagged.amount) <= 5 for txn in prior)
+    amount = facts.flagged.amount
+    tolerance = max(20.0, 0.25 * amount)
+    return any(abs(txn.amount - amount) <= tolerance for txn in pool)
+
+
+def _shared_origin(facts: CaseFacts) -> bool:
+    if facts.case.trigger_type is TriggerType.ANALYST_REQUEST and facts.device_profile_id:
+        return True
+    if not _specific_device(facts.device_profile_id):
+        return False
+    return any(card_id != facts.card.card_id for card_id in facts.device_card_ids)
+
+
+def _specific_device(profile: str) -> bool:
+    info = profile.split("|", 1)[0].strip() if profile else ""
+    if info in {"", "Windows", "iOS Device", "MacOS", "Linux", "Trident/7.0"}:
+        return False
+    return any(char.isdigit() for char in info)
 
 
 def _new_device(facts: CaseFacts) -> bool:
@@ -241,6 +298,12 @@ def _assumed_response(
 def _verdict(final: list, pattern: FraudPattern) -> Verdict:
     actions = {item.action for item in final}
     if PolicyAction.CLOSE_NO_FRAUD in actions:
+        return Verdict.LEGITIMATE
+    if (
+        PolicyAction.WARN_CUSTOMER in actions
+        and PolicyAction.BLOCK_CARD not in actions
+        and PolicyAction.FILE_REPORT not in actions
+    ):
         return Verdict.LEGITIMATE
     if PolicyAction.ESCALATE_TO_ANALYST in actions and PolicyAction.BLOCK_CARD not in actions:
         return Verdict.UNCERTAIN
@@ -404,15 +467,18 @@ def _sar(facts: CaseFacts, filed: bool, verdict: Verdict, final: list) -> SAR:
     day = flagged.ts[:10]
     return SAR(
         file=True,
-        reason="R2: customer denied the transaction" if facts.case.trigger_type is TriggerType.CUSTOMER_REPORT else "Policy recommended FILE_REPORT",
+        reason="R2: customer denied the transaction" if facts.case.trigger_type is TriggerType.CUSTOMER_REPORT else "R6: shared origin or high-exposure confirmed activity",
         narrative=(
             f"On {day}, card {facts.card.card_id} belonging to customer {facts.case.customer_id} "
             f"was used for a {flagged.amount:.2f} USD {flagged.channel} transaction {flagged.txn_id} "
-            f"in billing region {flagged.billing_region or 'unknown'}. "
-            "The activity is inconsistent with the investigation conclusion and was treated as unauthorized. "
-            "The cardholder denied the purchase or the graph pattern matched confirmed fraud. "
-            "The card is recommended for block and the episode is recorded for case memory. "
-            f"Total unauthorized amount: {flagged.amount:.2f} USD."
+            f"in billing region {flagged.billing_region or 'unknown'}, country {flagged.billing_country or 'unknown'}. "
+            f"The product code was {flagged.product_cd}. "
+            "Graph neighborhood review found this activity inconsistent with the cardholder's established pattern or linked it to a shared origin. "
+            "The investigation treated the purchase as unauthorized. "
+            "Connected cards on the same device profile, if any, are recommended for monitoring. "
+            "The flagged card is recommended for restriction pending reissue. "
+            f"Total unauthorized amount: {flagged.amount:.2f} USD. "
+            "This report is filed so a regulator can review the episode on its own."
         ),
         subjects=[facts.case.customer_id, facts.card.card_id],
         total_amount_usd=abs(flagged.amount),

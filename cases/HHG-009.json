@@ -1,0 +1,88 @@
+{
+  "case_id": "HHG-009",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.58,
+    "pattern": "card_not_present_fraud",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3581141"
+    ],
+    "first_suspicious_txn_id": "3581141",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 30.02,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3581141 is a 30.02 USD online product-S purchase in billing region 203.0 on 2016-12-28 12:10:53. Card C08299-K1 is a visa credit owned by C08299.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3581141)",
+        "entity_ids": [
+          "3581141",
+          "C08299-K1",
+          "C08299"
+        ]
+      },
+      {
+        "claim": "Region 203.0 has 1 prior purchases on this card before the alert.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C08299-K1, region=203.0)",
+        "entity_ids": [
+          "3114008",
+          "3581141"
+        ]
+      },
+      {
+        "claim": "Customer denied the purchase and still has the card.",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "HHG-009 is a customer_report alert on a 30.02 USD online purchase in billing region 203.0. Graph history shows 1 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.58. Verdict is fraud.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: customer denied the transaction"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: customer denied the transaction"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A verification response settled the question (deny).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

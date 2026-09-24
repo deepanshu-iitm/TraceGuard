@@ -1,0 +1,134 @@
+{
+  "case_id": "HHG-013",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.74,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3526826"
+    ],
+    "first_suspicious_txn_id": "3526826",
+    "connected_card_ids": [
+      "C08106-K1",
+      "C09933-K2",
+      "C09988-K1",
+      "C11891-K1",
+      "C11923-K1",
+      "C11923-K2",
+      "C13171-K2"
+    ],
+    "connected_device_profiles": [
+      "Windows |  | chrome 66.0 | "
+    ],
+    "exposure_usd": 35.66,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3526826 is a 35.66 USD online product-C purchase in billing region unknown on 2016-12-09 02:39:29. Card C07671-K2 is a mastercard debit owned by C07671.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3526826)",
+        "entity_ids": [
+          "3526826",
+          "C07671-K2",
+          "C07671"
+        ]
+      },
+      {
+        "claim": "The flagged transaction has no billing region on the graph.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C07671-K2, region=)",
+        "entity_ids": [
+          "3276674",
+          "3526826"
+        ]
+      },
+      {
+        "claim": "Closed cases on this card: CC-1475 (confirmed_fraud, account_takeover); CC-3216 (confirmed_fraud, card_not_present_new_device); CC-3761 (cleared, none); CC-4294 (confirmed_fraud, account_takeover).",
+        "source": "graph",
+        "ref": "query:closed_cases(card_id=C07671-K2)",
+        "entity_ids": [
+          "CC-1475",
+          "CC-3216",
+          "CC-3761",
+          "CC-4294",
+          "3106996",
+          "3107600",
+          "3107670",
+          "3112239",
+          "3112324",
+          "3117085",
+          "3117123",
+          "3120420",
+          "3120423",
+          "3122136",
+          "3106996",
+          "3247646",
+          "3247679",
+          "3247726",
+          "3247646",
+          "3285920",
+          "3320387",
+          "3324796",
+          "3320387"
+        ]
+      },
+      {
+        "claim": "Customer denied the purchase and still has the card.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1475",
+      "CC-3216",
+      "CC-3761",
+      "CC-4294"
+    ],
+    "summary": "HHG-013 is a risk_score alert on a 35.66 USD online purchase in billing region unknown. Graph history shows 1 prior purchases in that region. Pattern is card_not_present_new_device; fraud probability 0.74. Verdict is fraud.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer states they did not make this purchase and still have the card."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: evidence requested from the customer"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: customer denied the transaction"
+      }
+    ],
+    "what_changed": "Customer denial confirmed the block."
+  },
+  "sar": {
+    "file": false,
+    "reason": "FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A verification response settled the question (deny).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

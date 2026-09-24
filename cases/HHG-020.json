@@ -1,0 +1,191 @@
+{
+  "case_id": "HHG-020",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.74,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3509359"
+    ],
+    "first_suspicious_txn_id": "3509359",
+    "connected_card_ids": [
+      "C02354-K2",
+      "C02923-K1"
+    ],
+    "connected_device_profiles": [
+      "Trident/7.0 | Windows 10 | ie 11.0 for desktop | 1920x1080"
+    ],
+    "exposure_usd": 125.08,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3509359 is a 125.08 USD online product-R purchase in billing region 264.0 on 2016-12-03 06:04:26. Card C12265-K2 is a visa debit owned by C12265.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3509359)",
+        "entity_ids": [
+          "3509359",
+          "C12265-K2",
+          "C12265"
+        ]
+      },
+      {
+        "claim": "Region 264.0 has 82 prior purchases on this card before the alert.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C12265-K2, region=264.0)",
+        "entity_ids": [
+          "3013334",
+          "3013528",
+          "3013569",
+          "3013599",
+          "3029405",
+          "3029549",
+          "3031740",
+          "3061338",
+          "3067945",
+          "3071655",
+          "3090666",
+          "3091289",
+          "3095915",
+          "3098904",
+          "3099578",
+          "3106491",
+          "3111766",
+          "3119975",
+          "3144210",
+          "3159395",
+          "3162448",
+          "3182252",
+          "3190062",
+          "3193949",
+          "3194038",
+          "3207933",
+          "3219977",
+          "3220036",
+          "3237603",
+          "3239018",
+          "3254649",
+          "3259414",
+          "3275655",
+          "3275722",
+          "3287641",
+          "3287769",
+          "3292205",
+          "3292782",
+          "3294669",
+          "3298579",
+          "3330922",
+          "3330981",
+          "3331572",
+          "3336034",
+          "3341729",
+          "3357481",
+          "3368200",
+          "3374154",
+          "3378679",
+          "3383236",
+          "3386248",
+          "3391994",
+          "3394481",
+          "3404520",
+          "3405520",
+          "3409428",
+          "3413886",
+          "3414639",
+          "3432378",
+          "3434201",
+          "3434283",
+          "3439235",
+          "3439294",
+          "3439323",
+          "3442965",
+          "3445449",
+          "3448839",
+          "3453461",
+          "3458046",
+          "3467211",
+          "3472874",
+          "3478576",
+          "3481255",
+          "3485208",
+          "3486128",
+          "3486217",
+          "3489373",
+          "3493555",
+          "3497527",
+          "3497540",
+          "3501882",
+          "3501890",
+          "3509359"
+        ]
+      },
+      {
+        "claim": "Closed cases on this card: CC-2277 (confirmed_fraud, account_takeover); CC-2447 (confirmed_fraud, account_takeover).",
+        "source": "graph",
+        "ref": "query:closed_cases(card_id=C12265-K2)",
+        "entity_ids": [
+          "CC-2277",
+          "CC-2447",
+          "3182252",
+          "3182252",
+          "3193949",
+          "3193949"
+        ]
+      },
+      {
+        "claim": "Customer denied the purchase and still has the card.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-2277",
+      "CC-2447"
+    ],
+    "summary": "HHG-020 is a risk_score alert on a 125.08 USD online purchase in billing region 264.0. Graph history shows 82 prior purchases in that region. Pattern is card_not_present_new_device; fraud probability 0.74. Verdict is fraud.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer states they did not make this purchase and still have the card."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: evidence requested from the customer"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: customer denied the transaction"
+      }
+    ],
+    "what_changed": "Customer denial confirmed the block."
+  },
+  "sar": {
+    "file": false,
+    "reason": "FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A verification response settled the question (deny).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

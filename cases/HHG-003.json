@@ -1,0 +1,172 @@
+{
+  "case_id": "HHG-003",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.12,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0.0,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3530164 is a 49.00 USD in_person product-W purchase in billing region 330.0 on 2016-12-10 13:01:21. Card C08623-K2 is a mastercard credit owned by C08623.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3530164)",
+        "entity_ids": [
+          "3530164",
+          "C08623-K2",
+          "C08623"
+        ]
+      },
+      {
+        "claim": "Region 330.0 has 42 prior purchases on this card before the alert.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C08623-K2, region=330.0)",
+        "entity_ids": [
+          "3027702",
+          "3047827",
+          "3084741",
+          "3090858",
+          "3098925",
+          "3128139",
+          "3128166",
+          "3129159",
+          "3131271",
+          "3134597",
+          "3162397",
+          "3162401",
+          "3169424",
+          "3182416",
+          "3202013",
+          "3216800",
+          "3216812",
+          "3305349",
+          "3305359",
+          "3339319",
+          "3342990",
+          "3348830",
+          "3351586",
+          "3380116",
+          "3380157",
+          "3395017",
+          "3397283",
+          "3399119",
+          "3402877",
+          "3426604",
+          "3459653",
+          "3474725",
+          "3482097",
+          "3488795",
+          "3493772",
+          "3511680",
+          "3521522",
+          "3521524",
+          "3521954",
+          "3522026",
+          "3527215",
+          "3530056",
+          "3530164"
+        ]
+      },
+      {
+        "claim": "Closed cases on this card: CC-1589 (cleared, none); CC-2817 (confirmed_fraud, out_of_region_use); CC-2935 (confirmed_fraud, out_of_region_use); CC-3327 (confirmed_fraud, account_takeover); CC-3682 (confirmed_fraud, out_of_region_use); CC-4957 (confirmed_fraud, out_of_region_use).",
+        "source": "graph",
+        "ref": "query:closed_cases(card_id=C08623-K2)",
+        "entity_ids": [
+          "CC-1589",
+          "CC-2817",
+          "CC-2935",
+          "CC-3327",
+          "CC-3682",
+          "CC-4957",
+          "3136399",
+          "3220442",
+          "3220442",
+          "3227871",
+          "3227895",
+          "3227871",
+          "3252324",
+          "3252393",
+          "3254075",
+          "3252324",
+          "3275452",
+          "3280670",
+          "3275452",
+          "3371052",
+          "3371052"
+        ]
+      },
+      {
+        "claim": "Customer denied the purchase and still has the card.",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1589",
+      "CC-2817",
+      "CC-2935",
+      "CC-3327",
+      "CC-3682",
+      "CC-4957"
+    ],
+    "summary": "HHG-003 is a customer_report alert on a 49.00 USD in_person purchase in billing region 330.0. Graph history shows 42 prior purchases in that region. Pattern is none; fraud probability 0.12. Verdict is legitimate.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "Fraud probability 0.12 is supported by 2 independent pieces of evidence.",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}

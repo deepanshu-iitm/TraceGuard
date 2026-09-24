@@ -1,0 +1,141 @@
+{
+  "case_id": "HHG-016",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.12,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0.0,
+    "evidence": [
+      {
+        "claim": "Flagged transaction 3534820 is a 59.67 USD online product-C purchase in billing region unknown on 2016-12-11 22:39:08. Card C09988-K1 is a visa debit owned by C09988.",
+        "source": "graph",
+        "ref": "query:investigate_txn(t=3534820)",
+        "entity_ids": [
+          "3534820",
+          "C09988-K1",
+          "C09988"
+        ]
+      },
+      {
+        "claim": "The flagged transaction has no billing region on the graph.",
+        "source": "graph",
+        "ref": "query:card_region_history(card_id=C09988-K1, region=)",
+        "entity_ids": [
+          "3015139",
+          "3099865",
+          "3105149",
+          "3128905",
+          "3164170",
+          "3174800",
+          "3191366",
+          "3244254",
+          "3266021",
+          "3266022",
+          "3281953",
+          "3282178",
+          "3285143",
+          "3285152",
+          "3285177",
+          "3285211",
+          "3289577",
+          "3295579",
+          "3305566",
+          "3305634",
+          "3309431",
+          "3309839",
+          "3309908",
+          "3313487",
+          "3316685",
+          "3316755",
+          "3322019",
+          "3322692",
+          "3322716",
+          "3324490",
+          "3330430",
+          "3347315",
+          "3357070",
+          "3357075",
+          "3357102",
+          "3364287",
+          "3368735",
+          "3368736",
+          "3368763",
+          "3374563",
+          "3374623",
+          "3374642",
+          "3374650",
+          "3374700",
+          "3396976",
+          "3474173",
+          "3534820"
+        ]
+      },
+      {
+        "claim": "Customer denied the purchase and still has the card.",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "HHG-016 is a customer_report alert on a 59.67 USD online purchase in billing region unknown. Graph history shows 46 prior purchases in that region. Pattern is none; fraud probability 0.12. Verdict is legitimate.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: disputed charge matches a recurring pattern; do not block"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "FILE_REPORT is not recommended",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "Fraud probability 0.12 is supported by 2 independent pieces of evidence.",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.0
+}
