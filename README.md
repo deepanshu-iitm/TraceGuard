@@ -10,7 +10,7 @@ Agentic fraud investigation on TigerGraph. The agent starts from an uncertain al
 4. Writes each case back to the graph as `InvestigationCase`.
 5. Serves an analyst page at `/` and `POST /investigate/{case_id}`.
 
-Policy, exposure, approval routes, and JSON schema are deterministic Python. Graph hops are GSQL queries (`get_case_facts`, `investigate_txn`, `shared_cards_on_device`). GraphRAG retrieves policy text, known patterns, and closed-case notes. LangGraph runs facts → policy → retrieve → compose → explain → persist. MCP exposes the GSQL hops plus `investigate_case` (`python -m backend.mcp.server`).
+Policy, exposure, approval routes, and JSON schema are deterministic Python. Graph hops are GSQL. GraphRAG retrieves policy text, known patterns, and closed-case notes. LangGraph runs facts → policy → retrieve → compose → explain → persist. An optional `OPENAI_API_KEY` only rewrites the summary. `GET /health` reports `graph` (`local` or `tigergraph`) and `llm` (`on` or `off`).
 
 ## 20 exam answers
 
@@ -31,6 +31,12 @@ python -m uvicorn backend.main:app --reload
 ```
 
 Open http://127.0.0.1:8000 — select a case to open the saved answer, or Investigate to re-run the graph loop.
+
+```powershell
+python -m backend.mcp.server
+```
+
+MCP tools: `get_case_facts`, `investigate_txn`, `shared_cards_on_device`, `get_investigation_case`, `upsert_investigation_case`, `investigate_case`, `tigergraph__run_installed_query`.
 
 ## TigerGraph
 
