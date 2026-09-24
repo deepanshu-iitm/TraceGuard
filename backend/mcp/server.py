@@ -67,5 +67,16 @@ def upsert_investigation_case(c: str) -> dict:
     }
 
 
+@mcp.tool(name="investigate_case")
+def investigate_case(case_id: str) -> dict:
+    """Run the LangGraph investigation for one exam case and persist InvestigationCase."""
+    from backend.data import load_case_pack
+    from backend.investigate import investigate
+
+    if not any(item.case_id == case_id for item in load_case_pack()):
+        raise ValueError(f"unknown case_id: {case_id}")
+    return investigate(case_id).model_dump(mode="json")
+
+
 if __name__ == "__main__":
     mcp.run()

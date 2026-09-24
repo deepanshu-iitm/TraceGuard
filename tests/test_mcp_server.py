@@ -1,5 +1,8 @@
-from backend.mcp.server import get_investigation_case, upsert_investigation_case
+import pytest
+
+from backend.mcp.server import get_investigation_case, investigate_case, upsert_investigation_case
 from backend.models.answer import Answer
+from tests.test_answer import EXAMPLE
 
 
 def test_mcp_upsert_writes_saved_hhg001(monkeypatch) -> None:
@@ -44,3 +47,18 @@ def test_mcp_get_investigation_case_uses_installed_query(monkeypatch) -> None:
     )
     payload = get_investigation_case("HHG-001")
     assert payload[0]["c"][0]["v_id"] == "HHG-001"
+
+
+def test_mcp_investigate_case_runs_the_agent(monkeypatch) -> None:
+    answer = Answer.model_validate(EXAMPLE)
+    monkeypatch.setattr(
+        "backend.investigate.investigate", lambda case_id: answer
+    )
+    payload = investigate_case("HHG-001")
+    assert payload["case_id"] == "HHG-017"
+    assert payload["case"]["verdict"] == "fraud"
+
+
+def test_mcp_investigate_case_rejects_unknown_ids() -> None:
+    with pytest.raises(ValueError, match="unknown case_id"):
+        investigate_case("HHG-999")
