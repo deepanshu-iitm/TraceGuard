@@ -4,9 +4,21 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 from pathlib import Path
 
+from backend.investigate.analysis import (
+    calibrated_probability,
+    card_testing,
+    connected_card_ids,
+    detect_pattern,
+    episode_exposure,
+    episode_txns,
+    known_spend,
+    new_device as _new_device,
+    pattern_description,
+    shared_origin,
+    undocumented_coordinated,
+)
 from backend.investigate.facts import CaseFacts, ClosedCaseFact, TxnFact, load_case_facts
 from backend.models.answer import (
     ActionRecommendation,
@@ -54,20 +66,23 @@ class InvestigationDecision:
     final: list[RecommendedAction]
     requests: list[EvidenceRequest]
     stop_reason: str
+    episode: tuple[TxnFact, ...] = ()
 
 
 def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
-    pattern = _pattern(facts)
-    graph_p = _probability(facts, pattern)
-    testing, cleared = _card_testing(facts)
+    pattern = detect_pattern(facts)
+    graph_p = calibrated_probability(facts, pattern)
+    testing, cleared = card_testing(facts)
     disputed = facts.case.trigger_type is TriggerType.CUSTOMER_REPORT
-    shared = _shared_origin(facts)
-    recurring = disputed and _known_spend(facts) and not shared
+    shared = shared_origin(facts)
+    undocumented = undocumented_coordinated(facts)
+    recurring = disputed and known_spend(facts) and not shared
     if recurring:
         pattern = FraudPattern.NONE
-        graph_p = 0.12
+        graph_p = calibrated_probability(facts, pattern)
     single_signal = pattern is FraudPattern.NONE and not disputed and not shared
-    exposure = 0.0 if pattern is FraudPattern.NONE and not shared else abs(facts.flagged.amount)
+    episode = tuple(episode_txns(facts, pattern))
+    exposure = 0.0 if pattern is FraudPattern.NONE and not shared else episode_exposure(list(episode)) or abs(facts.flagged.amount)
     assumed: CustomerResponse | None
     requests: list[EvidenceRequest] = []
 
@@ -82,6 +97,8 @@ def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
         assumed = None
         initial = recommend_actions(final_snap)
         final = initial
+        episode = ()
+        exposure = 0.0
     elif disputed:
         final_snap = PolicySnapshot(
             fraud_probability=graph_p,
@@ -91,15 +108,29 @@ def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
             card_testing=testing,
             testing_large_purchase_cleared=cleared,
             shared_origin=shared,
+            coordinated_undocumented=undocumented,
             customer_dispute=True,
         )
         assumed = CustomerResponse.DENY
         initial = recommend_actions(final_snap)
         final = initial
+    elif undocumented:
+        final_snap = PolicySnapshot(
+            fraud_probability=max(graph_p, 0.70),
+            exposure_usd=exposure,
+            pattern=FraudPattern.UNDOCUMENTED,
+            coordinated_undocumented=True,
+            shared_origin=shared,
+        )
+        graph_p = final_snap.fraud_probability
+        pattern = final_snap.pattern
+        assumed = None
+        initial = recommend_actions(final_snap)
+        final = initial
     elif shared:
         final_snap = PolicySnapshot(
             fraud_probability=max(graph_p, 0.80),
-            exposure_usd=abs(facts.flagged.amount),
+            exposure_usd=exposure or abs(facts.flagged.amount),
             pattern=pattern if pattern is not FraudPattern.NONE else FraudPattern.CARD_NOT_PRESENT_FRAUD,
             shared_origin=True,
             card_testing=testing,
@@ -110,7 +141,9 @@ def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
         assumed = None
         initial = recommend_actions(final_snap)
         final = initial
-        exposure = abs(facts.flagged.amount)
+        exposure = final_snap.exposure_usd
+        if not episode:
+            episode = (facts.flagged,)
     else:
         assumed = _assumed_response(facts, pattern, disputed)
         initial = recommend_actions(
@@ -161,6 +194,7 @@ def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
         final=final,
         requests=requests,
         stop_reason=stop.reason or "Further steps are unlikely to change the decision.",
+        episode=episode,
     )
 
 
@@ -187,13 +221,14 @@ def _build_answer(
     initial = decision.initial
     final = decision.final
     requests = decision.requests
-    connected = [card_id for card_id in facts.device_card_ids if card_id != facts.card.card_id]
+    connected = connected_card_ids(facts)
     verdict = _verdict(final, pattern)
     status = _status(final, verdict)
-    affected = [] if verdict is Verdict.LEGITIMATE else [facts.flagged.txn_id]
-    exposure_out = 0.0 if verdict is Verdict.LEGITIMATE else round(sum(
-        abs(txn.amount) for txn in facts.history if txn.txn_id in set(affected)
-    ), 2)
+    episode = list(decision.episode)
+    affected = [] if verdict is Verdict.LEGITIMATE else [txn.txn_id for txn in episode] or [facts.flagged.txn_id]
+    exposure_out = 0.0 if verdict is Verdict.LEGITIMATE else episode_exposure(
+        [txn for txn in facts.history if txn.txn_id in set(affected)] or [facts.flagged]
+    )
     filed = any(item.action is PolicyAction.FILE_REPORT for item in final)
     return Answer(
         case_id=facts.case.case_id,
@@ -202,7 +237,7 @@ def _build_answer(
             verdict=verdict,
             fraud_probability=graph_p,
             pattern=FraudPattern.NONE if verdict is Verdict.LEGITIMATE else pattern,
-            pattern_description="",
+            pattern_description="" if verdict is Verdict.LEGITIMATE else pattern_description(facts, pattern),
             affected_txn_ids=affected,
             first_suspicious_txn_id="" if not affected else affected[0],
             connected_card_ids=connected if verdict is not Verdict.LEGITIMATE else [],
@@ -213,9 +248,10 @@ def _build_answer(
                 assumed if not disputed else CustomerResponse.DENY,
                 pattern,
                 documents,
+                affected,
             ),
             similar_prior_cases=[case.case_id for case in facts.closed_cases],
-            summary=_summary(facts, verdict, pattern, graph_p),
+            summary=_summary(facts, verdict, pattern, graph_p, affected, exposure_out),
             written_to_graph=True,
             graph_case_id=facts.case.case_id,
         ),
@@ -225,7 +261,7 @@ def _build_answer(
             final=_actions(final),
             what_changed=_what_changed(initial, final, assumed, disputed),
         ),
-        sar=_sar(facts, filed, verdict, final),
+        sar=_sar(facts, filed, verdict, final, affected, exposure_out),
         stop_reason=decision.stop_reason,
         tool_calls=tool_calls,
         tokens=0,
@@ -243,104 +279,23 @@ def write_answer(case_id: str, out_dir: Path | None = None) -> Path:
 
 
 def _pattern(facts: CaseFacts) -> FraudPattern:
-    testing, _cleared = _card_testing(facts)
-    if testing:
-        return FraudPattern.CARD_TESTING
-    if _shared_origin(facts) and facts.flagged.channel == "online":
-        if _new_device(facts):
-            return FraudPattern.CARD_NOT_PRESENT_NEW_DEVICE
-        return FraudPattern.CARD_NOT_PRESENT_FRAUD
-    if _known_spend(facts):
-        return FraudPattern.NONE
-    if facts.flagged.channel == "online" and _new_device(facts):
-        return FraudPattern.CARD_NOT_PRESENT_NEW_DEVICE
-    if facts.flagged.channel == "in_person" and not facts.prior_in_region():
-        return FraudPattern.OUT_OF_REGION_USE
-    if facts.flagged.channel == "online":
-        return FraudPattern.CARD_NOT_PRESENT_FRAUD
-    return FraudPattern.NONE
+    return detect_pattern(facts)
 
 
 def _probability(facts: CaseFacts, pattern: FraudPattern) -> float:
-    if _shared_origin(facts):
-        return 0.80
-    if pattern is FraudPattern.NONE and _known_spend(facts):
-        return 0.12
-    if pattern is FraudPattern.CARD_TESTING:
-        return 0.82
-    if pattern is FraudPattern.CARD_NOT_PRESENT_NEW_DEVICE:
-        return 0.74
-    if pattern is FraudPattern.OUT_OF_REGION_USE:
-        return 0.68
-    if pattern is FraudPattern.CARD_NOT_PRESENT_FRAUD:
-        return 0.58
-    return 0.45
+    return calibrated_probability(facts, pattern)
 
 
 def _known_spend(facts: CaseFacts) -> bool:
-    prior = facts.prior()
-    if not prior:
-        return False
-    same_channel = [txn for txn in prior if txn.channel == facts.flagged.channel]
-    if len(same_channel) < 3 or len(same_channel) < 0.1 * len(prior):
-        return False
-    peers = facts.prior_in_region() if facts.flagged.billing_region else tuple(same_channel)
-    return _amount_matches(facts, peers)
-
-
-def _amount_matches_region(facts: CaseFacts) -> bool:
-    return _amount_matches(facts, facts.prior_in_region())
-
-
-def _amount_matches(facts: CaseFacts, prior: tuple[TxnFact, ...] | None = None) -> bool:
-    pool = facts.prior_in_region() if prior is None else prior
-    if not pool:
-        return False
-    amount = facts.flagged.amount
-    tolerance = max(20.0, 0.25 * amount)
-    return any(abs(txn.amount - amount) <= tolerance for txn in pool)
+    return known_spend(facts)
 
 
 def _shared_origin(facts: CaseFacts) -> bool:
-    if facts.case.trigger_type is TriggerType.ANALYST_REQUEST and facts.device_profile_id:
-        return True
-    if not _specific_device(facts.device_profile_id):
-        return False
-    return any(card_id != facts.card.card_id for card_id in facts.device_card_ids)
-
-
-def _specific_device(profile: str) -> bool:
-    info = profile.split("|", 1)[0].strip() if profile else ""
-    if info in {"", "Windows", "iOS Device", "MacOS", "Linux", "Trident/7.0"}:
-        return False
-    return any(char.isdigit() for char in info)
-
-
-def _new_device(facts: CaseFacts) -> bool:
-    profile = facts.flagged.device_profile_id
-    if not profile:
-        return False
-    prior = facts.prior()
-    seen = {txn.device_profile_id for txn in prior if txn.device_profile_id}
-    if seen:
-        return profile not in seen
-    # Savanna history vertices do not carry device ids. Do not treat that as a new device.
-    return not prior
+    return shared_origin(facts)
 
 
 def _card_testing(facts: CaseFacts) -> tuple[bool, bool]:
-    flagged = facts.flagged
-    start = _parse(flagged.ts) - timedelta(hours=1)
-    small = [
-        txn
-        for txn in facts.prior()
-        if txn.channel == "online"
-        and txn.amount < 5
-        and _parse(txn.ts) >= start
-    ]
-    if len(small) >= 3 and flagged.channel == "online" and flagged.amount >= 5:
-        return True, flagged.amount > 100
-    return False, False
+    return card_testing(facts)
 
 
 def _assumed_response(
@@ -348,7 +303,7 @@ def _assumed_response(
 ) -> CustomerResponse | None:
     if disputed:
         return CustomerResponse.DENY
-    if pattern is FraudPattern.NONE and _known_spend(facts):
+    if pattern is FraudPattern.NONE and known_spend(facts):
         return CustomerResponse.CONFIRM
     if pattern is FraudPattern.NONE:
         return CustomerResponse.CONFIRM
@@ -396,6 +351,7 @@ def _evidence(
     response: CustomerResponse | None,
     pattern: FraudPattern,
     documents: list[Evidence],
+    affected: list[str] | None = None,
 ) -> list[Evidence]:
     flagged = facts.flagged
     region_prior = facts.prior_in_region()
@@ -432,14 +388,16 @@ def _evidence(
                 entity_ids=_closed_ids(facts.closed_cases),
             )
         )
-    connected = [card_id for card_id in facts.device_card_ids if card_id != facts.card.card_id]
+    device_connected = [
+        card_id for card_id in facts.device_card_ids if card_id != facts.card.card_id
+    ]
     if facts.device_profile_id:
-        if connected:
+        if device_connected:
             claim = (
                 f"Device {facts.device_profile_id} is also linked to "
-                f"{len(connected)} other card(s): {', '.join(connected)}."
+                f"{len(device_connected)} other card(s): {', '.join(device_connected)}."
             )
-            entity_ids = [facts.device_profile_id, *connected]
+            entity_ids = [facts.device_profile_id, *device_connected]
         else:
             claim = (
                 f"Device {facts.device_profile_id} made this purchase; "
@@ -452,6 +410,58 @@ def _evidence(
                 source=EvidenceSource.GRAPH,
                 ref=f"query:shared_cards_on_device(d={facts.device_profile_id})",
                 entity_ids=entity_ids,
+            )
+        )
+    email = facts.flagged.recipient_email or facts.flagged.purchaser_email
+    email_others = [card_id for card_id in facts.email_card_ids if card_id != facts.card.card_id]
+    if email:
+        if 1 <= len(email_others) <= 6:
+            claim = (
+                f"Email domain {email} also links {len(email_others)} other card(s): "
+                f"{', '.join(email_others)}."
+            )
+            entity_ids = list(email_others) or [facts.card.card_id]
+        else:
+            claim = (
+                f"Email domain {email} is present on the flagged purchase; "
+                f"email_fanout found {len(email_others)} other cards, treated as too common for R6."
+            )
+            entity_ids = [facts.card.card_id]
+        items.append(
+            Evidence(
+                claim=claim,
+                source=EvidenceSource.GRAPH,
+                ref=f"query:email_fanout(e={email})",
+                entity_ids=entity_ids,
+            )
+        )
+    if facts.flagged.billing_region:
+        region_others = [
+            card_id for card_id in facts.region_card_ids if card_id != facts.card.card_id
+        ]
+        items.append(
+            Evidence(
+                claim=(
+                    f"Billing region {facts.flagged.billing_region} appears on "
+                    f"{len(region_others)} other cards in the local 1-hop fan-out. "
+                    "Region sharing is recorded, not treated as proof of a shared origin."
+                ),
+                source=EvidenceSource.GRAPH,
+                ref=f"query:region_fanout(r={facts.flagged.billing_region})",
+                entity_ids=[facts.card.card_id],
+            )
+        )
+    if affected and len(affected) > 1:
+        items.append(
+            Evidence(
+                claim=(
+                    f"Episode reconstruction grouped {len(affected)} transactions "
+                    f"around {facts.flagged.txn_id} using history, device, amount outliers, "
+                    f"and NEXT edges {', '.join(facts.next_txn_ids) or '(none)'}."
+                ),
+                source=EvidenceSource.GRAPH,
+                ref=f"query:next_chain(t={facts.flagged.txn_id})",
+                entity_ids=list(affected),
             )
         )
     if response is CustomerResponse.CONFIRM:
@@ -493,15 +503,22 @@ def _closed_ids(cases: tuple[ClosedCaseFact, ...]) -> list[str]:
 
 
 def _summary(
-    facts: CaseFacts, verdict: Verdict, pattern: FraudPattern, probability: float
+    facts: CaseFacts,
+    verdict: Verdict,
+    pattern: FraudPattern,
+    probability: float,
+    affected: list[str] | None = None,
+    exposure: float = 0.0,
 ) -> str:
     flagged = facts.flagged
+    n_affected = len(affected or [])
     return (
         f"{facts.case.case_id} is a {facts.case.trigger_type.value} alert on a "
         f"{flagged.amount:.2f} USD {flagged.channel} purchase in billing region "
         f"{flagged.billing_region or 'unknown'}. Graph history shows "
         f"{len(facts.prior_in_region())} prior purchases in that region. "
         f"Pattern is {pattern.value}; fraud probability {probability:.2f}. "
+        f"Episode size {n_affected}; exposure {exposure:.2f} USD. "
         f"Verdict is {verdict.value}."
     )
 
@@ -538,7 +555,14 @@ def _what_changed(initial: list, final: list, assumed: CustomerResponse | None, 
     return "nothing"
 
 
-def _sar(facts: CaseFacts, filed: bool, verdict: Verdict, final: list) -> SAR:
+def _sar(
+    facts: CaseFacts,
+    filed: bool,
+    verdict: Verdict,
+    final: list,
+    affected: list[str] | None = None,
+    exposure: float = 0.0,
+) -> SAR:
     if not filed or verdict is Verdict.LEGITIMATE:
         reason = "FILE_REPORT is not recommended"
         if any(item.reason == "R3" or item.action is PolicyAction.CLOSE_NO_FRAUD for item in final):
@@ -552,27 +576,39 @@ def _sar(facts: CaseFacts, filed: bool, verdict: Verdict, final: list) -> SAR:
             activity_dates=[],
         )
     flagged = facts.flagged
-    day = flagged.ts[:10]
+    episode_ids = affected or [flagged.txn_id]
+    episode = [txn for txn in facts.history if txn.txn_id in set(episode_ids)] or [flagged]
+    start_day = min(txn.ts[:10] for txn in episode)
+    end_day = max(txn.ts[:10] for txn in episode)
+    total = exposure or round(sum(abs(txn.amount) for txn in episode), 2)
+    connected = connected_card_ids(facts)
+    pattern_note = pattern_description(facts, detect_pattern(facts))
     return SAR(
         file=True,
-        reason="R2: customer denied the transaction" if facts.case.trigger_type is TriggerType.CUSTOMER_REPORT else "R6: shared origin or high-exposure confirmed activity",
+        reason=(
+            "R2: customer denied the transaction"
+            if facts.case.trigger_type is TriggerType.CUSTOMER_REPORT
+            else "R9: coordinated undocumented abuse"
+            if detect_pattern(facts) is FraudPattern.UNDOCUMENTED
+            else "R6: shared origin or high-exposure confirmed activity"
+        ),
         narrative=(
-            f"On {day}, card {facts.card.card_id} belonging to customer {facts.case.customer_id} "
+            f"On {start_day}, card {facts.card.card_id} belonging to customer {facts.case.customer_id} "
             f"was used for a {flagged.amount:.2f} USD {flagged.channel} transaction {flagged.txn_id} "
             f"in billing region {flagged.billing_region or 'unknown'}, country {flagged.billing_country or 'unknown'}. "
             f"The product code was {flagged.product_cd}. "
-            "Graph neighborhood review found this activity inconsistent with the cardholder's established pattern or linked it to a shared origin. "
+            f"Episode reconstruction identified {len(episode_ids)} related transaction(s) "
+            f"totaling {total:.2f} USD from {start_day} to {end_day}. "
+            "Graph neighborhood review found this activity inconsistent with the cardholder's established pattern "
+            "or linked it to a shared origin, email cluster, or mixed-channel takeover. "
+            f"{pattern_note} "
             "The investigation treated the purchase as unauthorized. "
-            "Connected cards on the same device profile, if any, are recommended for monitoring. "
+            f"Connected cards recommended for monitoring: {', '.join(connected) or 'none beyond the flagged card'}. "
             "The flagged card is recommended for restriction pending reissue. "
-            f"Total unauthorized amount: {flagged.amount:.2f} USD. "
+            f"Total unauthorized amount: {total:.2f} USD. "
             "This report is filed so a regulator can review the episode on its own."
         ),
-        subjects=[facts.case.customer_id, facts.card.card_id],
-        total_amount_usd=abs(flagged.amount),
-        activity_dates=[day, day],
+        subjects=[facts.case.customer_id, facts.card.card_id, *connected[:8]],
+        total_amount_usd=total,
+        activity_dates=[start_day, end_day],
     )
-
-
-def _parse(ts: str) -> datetime:
-    return datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")

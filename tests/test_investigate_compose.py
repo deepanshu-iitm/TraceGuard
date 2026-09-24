@@ -22,7 +22,7 @@ def test_composer_matches_hhg001_verdict_and_actions() -> None:
     assert answer.case.pattern is FraudPattern.NONE
     assert answer.case.affected_txn_ids == []
     assert answer.case.exposure_usd == 0
-    assert answer.case.fraud_probability == 0.12
+    assert answer.case.fraud_probability < 0.20
     assert answer.sar.file is False
     assert answer.case.written_to_graph is True
     assert answer.case.graph_case_id == "HHG-001"

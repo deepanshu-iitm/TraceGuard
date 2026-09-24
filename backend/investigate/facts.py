@@ -68,6 +68,9 @@ class CaseFacts:
     closed_cases: tuple[ClosedCaseFact, ...]
     device_profile_id: str
     device_card_ids: tuple[str, ...]
+    email_card_ids: tuple[str, ...] = ()
+    region_card_ids: tuple[str, ...] = ()
+    next_txn_ids: tuple[str, ...] = ()
 
     def prior(self) -> tuple[TxnFact, ...]:
         return tuple(txn for txn in self.history if txn.ts < self.flagged.ts)
@@ -107,6 +110,11 @@ def _facts_from_csv(item: CasePackItem, processed_dir: Path) -> CaseFacts:
     device_cards = index.cards_by_device.get(profile, ())
     if item.card_id not in device_cards:
         device_cards = device_cards + (item.card_id,)
+    email_key = flagged.recipient_email or flagged.purchaser_email
+    email_cards = index.cards_by_email.get(email_key, ()) if email_key else ()
+    region_cards = (
+        index.cards_by_region.get(flagged.billing_region, ()) if flagged.billing_region else ()
+    )
     return CaseFacts(
         case=item,
         flagged=flagged,
@@ -116,6 +124,9 @@ def _facts_from_csv(item: CasePackItem, processed_dir: Path) -> CaseFacts:
         closed_cases=closed,
         device_profile_id=profile,
         device_card_ids=tuple(sorted(device_cards)),
+        email_card_ids=tuple(sorted(email_cards)),
+        region_card_ids=tuple(sorted(region_cards)),
+        next_txn_ids=_neighbors(index.next_txn, item.flagged_txn_id),
     )
 
 
@@ -202,20 +213,47 @@ def _facts_from_payload(item: CasePackItem, payload: list) -> CaseFacts:
         closed_cases=closed,
         device_profile_id=profile,
         device_card_ids=tuple(sorted(device_cards)),
+        email_card_ids=(),
+        region_card_ids=(),
+        next_txn_ids=(),
     )
 
 
 def merge_shared_cards(facts: CaseFacts, payload: list) -> CaseFacts:
     """Union cards from shared_cards_on_device into the case neighborhood."""
+    return _merge_id_tuple(facts, "device_card_ids", payload, "cards")
+
+
+def merge_email_cards(facts: CaseFacts, payload: list) -> CaseFacts:
+    """Union cards from email_fanout into the case neighborhood."""
+    updated = _merge_id_tuple(facts, "email_card_ids", payload, "cards")
+    return _merge_id_tuple(updated, "email_card_ids", payload, "cards2")
+
+
+def merge_region_cards(facts: CaseFacts, payload: list) -> CaseFacts:
+    """Union cards from region_fanout (informational, not an automatic R6)."""
+    return _merge_id_tuple(facts, "region_card_ids", payload, "cards")
+
+
+def merge_next_txns(facts: CaseFacts, payload: list) -> CaseFacts:
+    """Union NEXT-chain transaction ids into the episode seed list."""
+    updated = _merge_id_tuple(facts, "next_txn_ids", payload, "nxt")
+    return _merge_id_tuple(updated, "next_txn_ids", payload, "prev")
+
+
+def _merge_id_tuple(
+    facts: CaseFacts, field: str, payload: list, key: str
+) -> CaseFacts:
     from backend.graph.parse import vertices
 
-    extra = {row["v_id"] for row in vertices(payload, "cards") if row.get("v_id")}
+    extra = {row["v_id"] for row in vertices(payload, key) if row.get("v_id")}
     if not extra:
         return facts
-    cards = tuple(sorted(set(facts.device_card_ids) | extra))
-    if cards == facts.device_card_ids:
+    current = set(getattr(facts, field))
+    merged = tuple(sorted(current | extra))
+    if merged == getattr(facts, field):
         return facts
-    return replace(facts, device_card_ids=cards)
+    return replace(facts, **{field: merged})
 
 
 def _case_pack_item(case_id: str) -> CasePackItem:
@@ -236,6 +274,9 @@ class _GraphIndex:
     device: dict[str, str]
     cards_by_device: dict[str, tuple[str, ...]]
     txn_to_card: dict[str, str]
+    cards_by_email: dict[str, tuple[str, ...]]
+    cards_by_region: dict[str, tuple[str, ...]]
+    next_txn: dict[str, tuple[str, ...]]
 
     def txn(self, txn_id: str) -> TxnFact:
         try:
@@ -320,6 +361,8 @@ def _load_index(processed_dir: Path) -> _GraphIndex:
     device: dict[str, str] = {}
     purchaser: dict[str, str] = {}
     recipient: dict[str, str] = {}
+    billed: dict[str, str] = {}
+    nxt: dict[str, list[str]] = defaultdict(list)
     for row in _rows(processed_dir / "edges.csv"):
         kind = row["edge_type"]
         src, dst = row["from_id"], row["to_id"]
@@ -337,6 +380,10 @@ def _load_index(processed_dir: Path) -> _GraphIndex:
             purchaser[src] = dst
         elif kind == "recipient_email":
             recipient[src] = dst
+        elif kind == "billed_in":
+            billed[src] = dst
+        elif kind == "next":
+            nxt[src].append(dst)
 
     involves_by_case = {case_id: tuple(txn_ids) for case_id, txn_ids in involves.items()}
     closed = {
@@ -356,10 +403,24 @@ def _load_index(processed_dir: Path) -> _GraphIndex:
         txn_id: card_id for card_id, txn_ids in made.items() for txn_id in txn_ids
     }
     cards_by_device: dict[str, set[str]] = defaultdict(set)
+    cards_by_email: dict[str, set[str]] = defaultdict(set)
+    cards_by_region: dict[str, set[str]] = defaultdict(set)
     for txn_id, profile in device.items():
         card_id = txn_to_card.get(txn_id)
         if card_id:
             cards_by_device[profile].add(card_id)
+    for txn_id, domain in {**purchaser, **recipient}.items():
+        card_id = txn_to_card.get(txn_id)
+        if card_id and domain:
+            cards_by_email[domain].add(card_id)
+    for txn_id, region in billed.items():
+        card_id = txn_to_card.get(txn_id)
+        if card_id and region:
+            cards_by_region[region].add(card_id)
+    for txn_id, txn in txns.items():
+        card_id = txn_to_card.get(txn_id)
+        if card_id and txn.billing_region:
+            cards_by_region[txn.billing_region].add(card_id)
     return _GraphIndex(
         txns=txns,
         cards=cards,
@@ -372,7 +433,22 @@ def _load_index(processed_dir: Path) -> _GraphIndex:
             profile: tuple(sorted(card_ids)) for profile, card_ids in cards_by_device.items()
         },
         txn_to_card=txn_to_card,
+        cards_by_email={
+            domain: tuple(sorted(card_ids)) for domain, card_ids in cards_by_email.items()
+        },
+        cards_by_region={
+            region: tuple(sorted(card_ids)) for region, card_ids in cards_by_region.items()
+        },
+        next_txn={txn_id: tuple(dests) for txn_id, dests in nxt.items()},
     )
+
+
+def _neighbors(forward: dict[str, tuple[str, ...]], txn_id: str) -> tuple[str, ...]:
+    linked = set(forward.get(txn_id, ()))
+    for src, dests in forward.items():
+        if txn_id in dests:
+            linked.add(src)
+    return tuple(sorted(linked))
 
 
 def _rows(path: Path) -> list[dict[str, str]]:

@@ -112,6 +112,20 @@ def test_r7_disputed_recurring_does_not_block() -> None:
     assert PolicyAction.BLOCK_CARD not in actions
 
 
+def test_r9_undocumented_files_and_escalates() -> None:
+    assert _actions(
+        PolicySnapshot(
+            fraud_probability=0.72,
+            exposure_usd=400,
+            coordinated_undocumented=True,
+        )
+    ) == [
+        PolicyAction.CREATE_CASE,
+        PolicyAction.FILE_REPORT,
+        PolicyAction.ESCALATE_TO_ANALYST,
+    ]
+
+
 def test_r10_blocks_all_cards_only_with_two_confirmed_cards() -> None:
     one = _actions(
         PolicySnapshot(
