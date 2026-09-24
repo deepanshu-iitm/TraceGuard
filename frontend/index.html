@@ -60,7 +60,7 @@
   <div class="layout">
     <aside id="cases"></aside>
     <main id="panel">
-      <p class="empty">Select a case, then run the investigation. The first run can take a few seconds.</p>
+      <p class="empty">Select a case to open the saved exam answer. Investigate re-runs the live graph.</p>
     </main>
   </div>
   <script>
@@ -88,30 +88,47 @@
       selected = item;
       [...casesEl.children].forEach((el) => el.classList.remove("active"));
       btn.classList.add("active");
-      panel.innerHTML = `
-        <p><strong>${item.case_id}</strong> · card ${item.card_id} · txn ${item.flagged_txn_id}</p>
-        <p>${item.trigger_text}</p>
-        <p><button class="run" id="run">Investigate</button></p>
-        <p class="empty">No investigation yet.</p>
-      `;
-      document.getElementById("run").onclick = () => runInvestigation(item.case_id);
+      panel.innerHTML = `<p>Loading saved answer for ${item.case_id}…</p>`;
+      fetch(`/cases/${item.case_id}`)
+        .then((res) => {
+          if (!res.ok) {
+            return res.json().then((err) => {
+              throw new Error(err.detail || `HTTP ${res.status}`);
+            });
+          }
+          return res.json();
+        })
+        .then((answer) => renderAnswer(answer, "saved"))
+        .catch((error) => {
+          panel.innerHTML = `
+            <p><strong>${item.case_id}</strong> · card ${item.card_id} · txn ${item.flagged_txn_id}</p>
+            <p>${item.trigger_text}</p>
+            <p class="error">${error.message}</p>
+            <p><button class="run" id="run">Investigate</button></p>
+          `;
+          document.getElementById("run").onclick = () => runInvestigation(item.case_id);
+        });
     }
 
     async function runInvestigation(caseId) {
       const run = document.getElementById("run");
-      run.disabled = true;
-      run.textContent = "Investigating…";
+      if (run) {
+        run.disabled = true;
+        run.textContent = "Investigating…";
+      }
       try {
         const response = await fetch(`/investigate/${caseId}`, { method: "POST" });
         if (!response.ok) {
           const err = await response.json().catch(() => ({ detail: response.statusText }));
           throw new Error(err.detail || `HTTP ${response.status}`);
         }
-        renderAnswer(await response.json());
+        renderAnswer(await response.json(), "live");
       } catch (error) {
         panel.insertAdjacentHTML("beforeend", `<p class="error">${error.message}</p>`);
-        run.disabled = false;
-        run.textContent = "Investigate";
+        if (run) {
+          run.disabled = false;
+          run.textContent = "Investigate";
+        }
       }
     }
 
@@ -121,8 +138,9 @@
       ).join("");
     }
 
-    function renderAnswer(answer) {
+    function renderAnswer(answer, source) {
       const c = answer.case;
+      const sourceLabel = source === "live" ? "Live investigation." : "Saved exam answer.";
       panel.innerHTML = `
         <div class="banner">
           <div>
@@ -133,6 +151,8 @@
         </div>
         <p>${c.summary}</p>
         <p>${answer.stop_reason}</p>
+        <p class="source">${sourceLabel}</p>
+        <p><button class="run" id="run">Investigate</button></p>
         <h2>Initial actions</h2>
         <ul class="actions">${actionList(answer.next_best_actions.initial)}</ul>
         <h2>Final actions</h2>
@@ -145,6 +165,7 @@
         <h2>Raw JSON</h2>
         <pre>${JSON.stringify(answer, null, 2)}</pre>
       `;
+      document.getElementById("run").onclick = () => runInvestigation(answer.case_id);
     }
 
     fetch("/cases")
