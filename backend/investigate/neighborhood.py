@@ -11,7 +11,7 @@ from backend.models.answer import Answer
 
 
 def investigation_view(case_id: str) -> dict[str, Any]:
-    facts = load_case_facts(case_id)
+    facts = _facts_for(case_id)
     answer = _saved_answer(case_id)
     return {
         "case_id": case_id,
@@ -26,11 +26,37 @@ def investigation_view(case_id: str) -> dict[str, Any]:
     }
 
 
+def _facts_for(case_id: str) -> CaseFacts:
+    if case_id.startswith("MON-"):
+        from backend.investigate.facts import load_alert_facts
+
+        answer = _saved_answer(case_id)
+        txn_id = _flagged_txn(answer)
+        if not txn_id:
+            raise KeyError(f"no flagged transaction for {case_id}")
+        return load_alert_facts(case_id, txn_id)
+    return load_case_facts(case_id)
+
+
 def _saved_answer(case_id: str) -> Answer | None:
-    path = CASES_DIR / f"{case_id}.json"
-    if not path.is_file():
-        return None
-    return Answer.model_validate_json(path.read_text(encoding="utf-8"))
+    from backend.investigate.monitor import MONITOR_DIR
+
+    for folder in (CASES_DIR, MONITOR_DIR):
+        path = folder / f"{case_id}.json"
+        if path.is_file():
+            return Answer.model_validate_json(path.read_text(encoding="utf-8"))
+    return None
+
+
+def _flagged_txn(answer: Answer | None) -> str:
+    if answer is None:
+        return ""
+    if answer.case.first_suspicious_txn_id:
+        return answer.case.first_suspicious_txn_id
+    for item in answer.case.evidence:
+        if item.ref.startswith("query:investigate_txn") and item.entity_ids:
+            return item.entity_ids[0]
+    return ""
 
 
 def _nodes(facts: CaseFacts, answer: Answer | None) -> list[dict[str, Any]]:
