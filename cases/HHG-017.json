@@ -88,29 +88,9 @@
         "entity_ids": []
       },
       {
-        "claim": "R1 Verify before blocking on a weak signal: If the case rests on a single signal, including a risk score alone, and fraud probability is below 0.70, recommend VERIFY_WITH_CUSTOMER or STEP_UP_AUTH before any block.",
+        "claim": "Closed case CC-3170: Case CC-3170: cardholder C07648 reported unrecognized activity on card C07648-K2. 3 transaction(s) between 2016-09-06 and 2016-09-06 totaling $402.00 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "document:policy:R1",
-        "entity_ids": []
-      },
-      {
-        "claim": "Undocumented coordinated activity: A tight cluster of cards sharing a rare email domain or other origin, without matching card testing, new-device CNP, out-of-region use, or account takeover. Cite the graph hop that found it.",
-        "source": "document",
-        "ref": "document:pattern:undocumented",
-        "entity_ids": []
-      },
-      {
-        "claim": "Closed case CC-4743: Case CC-4743: model scored a $32.09 transaction at 0.96. Cardholder confirmed the purchase from a new phone. Device added to profile. Alert cleared.",
-        "source": "document",
-        "ref": "document:closed_case/CC-4743",
-        "entity_ids": [
-          "CC-4743"
-        ]
-      },
-      {
-        "claim": "FFIEC authentication guidance: FFIEC guidance expects layered authentication. A new device or credential change on an online purchase is a reason to step up authentication, not automatic proof of fraud.",
-        "source": "document",
-        "ref": "document:reg:ffiec-auth",
+        "ref": "query:rag_search(closed_case/CC-3170)",
         "entity_ids": []
       }
     ],

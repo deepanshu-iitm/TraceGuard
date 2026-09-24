@@ -96,29 +96,9 @@
         "entity_ids": []
       },
       {
-        "claim": "R1 Verify before blocking on a weak signal: If the case rests on a single signal, including a risk score alone, and fraud probability is below 0.70, recommend VERIFY_WITH_CUSTOMER or STEP_UP_AUTH before any block.",
+        "claim": "Closed case CC-3493: Case CC-3493: cardholder C04185 reported unrecognized activity on card C04185-K2. 2 transaction(s) between 2016-09-14 and 2016-09-14 totaling $2,156.14 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "document:policy:R1",
-        "entity_ids": []
-      },
-      {
-        "claim": "Card-not-present fraud: Online activity inconsistent with the cardholder's normal merchants, amounts, or product codes. A burst of a few transactions within 48 hours is common.",
-        "source": "document",
-        "ref": "document:pattern:card_not_present_fraud",
-        "entity_ids": []
-      },
-      {
-        "claim": "Closed case CC-0003: Case CC-0003: model scored a $442.92 transaction at 0.91. Cardholder confirmed travel to the billing region in question. Alert cleared.",
-        "source": "document",
-        "ref": "document:closed_case/CC-0003",
-        "entity_ids": [
-          "CC-0003"
-        ]
-      },
-      {
-        "claim": "OFAC screening context: OFAC screening is separate from fraud typology. Graph investigation of device, email, and region neighbors does not replace sanctions screening and should not be described as OFAC.",
-        "source": "document",
-        "ref": "document:reg:ofac-screening",
+        "ref": "query:rag_search(closed_case/CC-3493)",
         "entity_ids": []
       }
     ],

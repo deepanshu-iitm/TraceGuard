@@ -10201,29 +10201,9 @@
         "entity_ids": []
       },
       {
-        "claim": "R1 Verify before blocking on a weak signal: If the case rests on a single signal, including a risk score alone, and fraud probability is below 0.70, recommend VERIFY_WITH_CUSTOMER or STEP_UP_AUTH before any block.",
+        "claim": "Closed case CC-3086: Case CC-3086: cardholder C13372 reported unrecognized activity on card C13372-K1. 4 transaction(s) between 2016-09-05 and 2016-09-05 totaling $36.32 were confirmed fraudulent. Online purchases inconsistent with the cardholder's usual merchants and amounts. Online transactions came from a SM-G950F Build/NRD90M on chrome 64.0 for android. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "document:policy:R1",
-        "entity_ids": []
-      },
-      {
-        "claim": "Card-not-present new device: Same as card-not-present fraud, but the identity record shows a device not previously seen on this account. Stronger evidence, not proof: legitimate customers also use new devices.",
-        "source": "document",
-        "ref": "document:pattern:card_not_present_new_device",
-        "entity_ids": []
-      },
-      {
-        "claim": "Closed case CC-4743: Case CC-4743: model scored a $32.09 transaction at 0.96. Cardholder confirmed the purchase from a new phone. Device added to profile. Alert cleared.",
-        "source": "document",
-        "ref": "document:closed_case/CC-4743",
-        "entity_ids": [
-          "CC-4743"
-        ]
-      },
-      {
-        "claim": "FFIEC authentication guidance: FFIEC guidance expects layered authentication. A new device or credential change on an online purchase is a reason to step up authentication, not automatic proof of fraud.",
-        "source": "document",
-        "ref": "document:reg:ffiec-auth",
+        "ref": "query:rag_search(closed_case/CC-3086)",
         "entity_ids": []
       }
     ],

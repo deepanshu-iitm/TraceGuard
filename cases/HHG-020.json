@@ -187,29 +187,21 @@
         ]
       },
       {
-        "claim": "R6 Shared origin: Several cards with fraud associated with the same device profile, billing region, or recipient email: CREATE_CASE, FILE_REPORT, and MONITOR_CONNECTED_CARDS for every affected card.",
-        "source": "document",
-        "ref": "document:policy:R6",
-        "entity_ids": []
-      },
-      {
         "claim": "Account takeover: Mixed-channel behavior inconsistent with the cardholder, often with device and match-flag anomalies. Stolen credentials, not only a stolen card number.",
         "source": "document",
-        "ref": "document:pattern:account_takeover",
+        "ref": "query:rag_search(pattern:account_takeover)",
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-0255: Case CC-0255: cardholder C02354 reported unrecognized activity on card C02354-K2. 7 transaction(s) between 2016-07-06 and 2016-07-08 totaling $1,167.08 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Online transactions came from a iOS Device on mobile safari 10.0. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-1294: Case CC-1294: cardholder C08943 reported unrecognized activity on card C08943-K2. 3 transaction(s) between 2016-07-26 and 2016-07-26 totaling $203.14 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "document:closed_case/CC-0255",
-        "entity_ids": [
-          "CC-0255"
-        ]
+        "ref": "query:rag_search(closed_case/CC-1294)",
+        "entity_ids": []
       },
       {
-        "claim": "FFIEC authentication guidance: FFIEC guidance expects layered authentication. A new device or credential change on an online purchase is a reason to step up authentication, not automatic proof of fraud.",
+        "claim": "R3 Customer confirms: When the customer confirms the transaction, recommend CLOSE_NO_FRAUD and record the confirmation.",
         "source": "document",
-        "ref": "document:reg:ffiec-auth",
+        "ref": "query:rag_search(policy:R3)",
         "entity_ids": []
       }
     ],

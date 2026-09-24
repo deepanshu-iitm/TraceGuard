@@ -124,29 +124,15 @@
         "entity_ids": []
       },
       {
-        "claim": "R6 Shared origin: Several cards with fraud associated with the same device profile, billing region, or recipient email: CREATE_CASE, FILE_REPORT, and MONITOR_CONNECTED_CARDS for every affected card.",
+        "claim": "Closed case CC-5314: Case CC-5314: cardholder C04346 reported unrecognized activity on card C04346-K2. 1 transaction(s) between 2016-10-26 and 2016-10-26 totaling $309.97 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "document:policy:R6",
+        "ref": "query:rag_search(closed_case/CC-5314)",
         "entity_ids": []
       },
       {
         "claim": "Account takeover: Mixed-channel behavior inconsistent with the cardholder, often with device and match-flag anomalies. Stolen credentials, not only a stolen card number.",
         "source": "document",
-        "ref": "document:pattern:account_takeover",
-        "entity_ids": []
-      },
-      {
-        "claim": "Closed case CC-0255: Case CC-0255: cardholder C02354 reported unrecognized activity on card C02354-K2. 7 transaction(s) between 2016-07-06 and 2016-07-08 totaling $1,167.08 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Online transactions came from a iOS Device on mobile safari 10.0. Card blocked and reissued. Customer reimbursed.",
-        "source": "document",
-        "ref": "document:closed_case/CC-0255",
-        "entity_ids": [
-          "CC-0255"
-        ]
-      },
-      {
-        "claim": "FFIEC authentication guidance: FFIEC guidance expects layered authentication. A new device or credential change on an online purchase is a reason to step up authentication, not automatic proof of fraud.",
-        "source": "document",
-        "ref": "document:reg:ffiec-auth",
+        "ref": "query:rag_search(pattern:account_takeover)",
         "entity_ids": []
       }
     ],

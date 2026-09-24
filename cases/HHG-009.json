@@ -68,29 +68,9 @@
         "entity_ids": []
       },
       {
-        "claim": "R2 Customer denies: When the customer denies the transaction, recommend BLOCK_CARD and CREATE_CASE. Add FILE_REPORT when exposure exceeds 1000 USD, a shared device is present, or another card's fraud is connected.",
+        "claim": "Closed case CC-3633: Case CC-3633: cardholder C10114 reported unrecognized activity on card C10114-K1. 2 transaction(s) between 2016-09-16 and 2016-09-18 totaling $109.69 were confirmed fraudulent. Online purchases inconsistent with the cardholder's usual merchants and amounts. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "document:policy:R2",
-        "entity_ids": []
-      },
-      {
-        "claim": "Card-not-present fraud: Online activity inconsistent with the cardholder's normal merchants, amounts, or product codes. A burst of a few transactions within 48 hours is common.",
-        "source": "document",
-        "ref": "document:pattern:card_not_present_fraud",
-        "entity_ids": []
-      },
-      {
-        "claim": "Closed case CC-1925: Case CC-1925: cardholder C13171 reported unrecognized activity on card C13171-K2. 3 transaction(s) between 2016-08-08 and 2016-08-08 totaling $120.30 were confirmed fraudulent. Online purchases inconsistent with the cardholder's usual merchants and amounts. Card blocked and reissued. Customer reimbursed.",
-        "source": "document",
-        "ref": "document:closed_case/CC-1925",
-        "entity_ids": [
-          "CC-1925"
-        ]
-      },
-      {
-        "claim": "FinCEN suspicious activity report: A SAR narrative should identify the subject, the dates, the amount, the account or card, and why the activity is suspicious, written so a regulator can review the episode without the rest of the case file. Do not file when the customer confirmed a legitimate purchase.",
-        "source": "document",
-        "ref": "document:reg:fincen-sar",
+        "ref": "query:rag_search(closed_case/CC-3633)",
         "entity_ids": []
       }
     ],

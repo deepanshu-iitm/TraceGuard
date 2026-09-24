@@ -2412,29 +2412,15 @@
         "entity_ids": []
       },
       {
+        "claim": "Closed case CC-1807: Case CC-1807: cardholder C13036 reported unrecognized activity on card C13036-K1. 1 transaction(s) between 2016-08-06 and 2016-08-06 totaling $107.91 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Card blocked and reissued. Customer reimbursed.",
+        "source": "document",
+        "ref": "query:rag_search(closed_case/CC-1807)",
+        "entity_ids": []
+      },
+      {
         "claim": "R1 Verify before blocking on a weak signal: If the case rests on a single signal, including a risk score alone, and fraud probability is below 0.70, recommend VERIFY_WITH_CUSTOMER or STEP_UP_AUTH before any block.",
         "source": "document",
-        "ref": "document:policy:R1",
-        "entity_ids": []
-      },
-      {
-        "claim": "Undocumented coordinated activity: A tight cluster of cards sharing a rare email domain or other origin, without matching card testing, new-device CNP, out-of-region use, or account takeover. Cite the graph hop that found it.",
-        "source": "document",
-        "ref": "document:pattern:undocumented",
-        "entity_ids": []
-      },
-      {
-        "claim": "Closed case CC-0003: Case CC-0003: model scored a $442.92 transaction at 0.91. Cardholder confirmed travel to the billing region in question. Alert cleared.",
-        "source": "document",
-        "ref": "document:closed_case/CC-0003",
-        "entity_ids": [
-          "CC-0003"
-        ]
-      },
-      {
-        "claim": "OFAC screening context: OFAC screening is separate from fraud typology. Graph investigation of device, email, and region neighbors does not replace sanctions screening and should not be described as OFAC.",
-        "source": "document",
-        "ref": "document:reg:ofac-screening",
+        "ref": "query:rag_search(policy:R1)",
         "entity_ids": []
       }
     ],
