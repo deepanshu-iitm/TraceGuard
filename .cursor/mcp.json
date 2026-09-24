@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "tigergraph": {
+      "command": ".venv/Scripts/tigergraph-mcp.exe",
+      "args": ["--env-file", ".env"]
+    },
+    "traceguard": {
+      "command": ".venv/Scripts/python.exe",
+      "args": ["-m", "backend.mcp.server"]
+    }
+  }
+}

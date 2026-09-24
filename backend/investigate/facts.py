@@ -89,7 +89,12 @@ def load_case_facts(case_id: str, processed_dir: Path | None = None) -> CaseFact
             "get_case_facts", {"t": item.flagged_txn_id}
         )
         return _facts_from_payload(item, payload)
-    return _facts_from_csv(item, processed_dir or PROCESSED_DIR)
+    return load_local_case_facts(case_id, processed_dir)
+
+
+def load_local_case_facts(case_id: str, processed_dir: Path | None = None) -> CaseFacts:
+    """Neighborhood from exported CSVs, even when TG_HOST is set."""
+    return _facts_from_csv(_case_pack_item(case_id), processed_dir or PROCESSED_DIR)
 
 
 def _facts_from_csv(item: CasePackItem, processed_dir: Path) -> CaseFacts:

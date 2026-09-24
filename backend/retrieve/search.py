@@ -132,8 +132,11 @@ def _as_evidence(doc: CorpusDoc) -> Evidence:
     )
 
 
-def all_corpus_docs() -> list[CorpusDoc]:
-    return list(POLICY_DOCS) + list(PATTERN_DOCS) + list(REGULATORY_DOCS) + _closed_case_docs()
+def all_corpus_docs(*, full_bank_notes: bool = False) -> list[CorpusDoc]:
+    closed = _raw_closed_notes() if full_bank_notes else _closed_case_docs()
+    if full_bank_notes and not closed:
+        closed = _closed_case_docs()
+    return list(POLICY_DOCS) + list(PATTERN_DOCS) + list(REGULATORY_DOCS) + closed
 
 
 def query_text(facts: CaseFacts, pattern: FraudPattern) -> str:
@@ -156,6 +159,12 @@ def query_text(facts: CaseFacts, pattern: FraudPattern) -> str:
     return " ".join(part for part in parts if part)
 
 
+def _raw_closed_notes() -> list[CorpusDoc]:
+    from backend.graph.export import RAW_DIR
+
+    return _load_closed_notes(RAW_DIR / "closed_cases_history.csv")
+
+
 def _closed_case_docs() -> list[CorpusDoc]:
     global _NOTES
     if _NOTES is None:
@@ -169,16 +178,17 @@ def _load_closed_notes(path: Path) -> list[CorpusDoc]:
     docs: list[CorpusDoc] = []
     with path.open(encoding="utf-8", newline="") as handle:
         for row in csv.DictReader(handle):
+            vid = (row.get("id") or row.get("case_id") or "").strip()
             notes = row.get("analyst_notes", "").strip()
-            if not notes:
+            if not vid or not notes:
                 continue
             docs.append(
                 CorpusDoc(
-                    doc_id=f"closed_case/{row['id']}",
-                    title=f"Closed case {row['id']}",
+                    doc_id=f"closed_case/{vid}",
+                    title=f"Closed case {vid}",
                     text=notes,
                     pattern=row.get("pattern", ""),
-                    entity_ids=(row["id"],),
+                    entity_ids=(vid,),
                 )
             )
     return docs

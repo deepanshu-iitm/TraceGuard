@@ -29,7 +29,7 @@ def get_graph_tools() -> GraphTools:
 
 
 class TigerGraphTools:
-    """Run installed queries on Savanna / Community Edition via pyTigerGraph."""
+    """Installed queries via the same contract as tigergraph-mcp run_installed_query."""
 
     def run_installed_query(self, name: str, params: dict[str, Any]) -> list[dict[str, Any]]:
         conn = _connection()

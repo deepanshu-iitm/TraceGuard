@@ -43,3 +43,23 @@ def _post(system: str, user: str) -> dict[str, Any]:
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def embed_texts(texts: list[str], model: str = "text-embedding-3-small") -> list[list[float]]:
+    """OpenAI embeddings. Empty input returns []."""
+    if not texts:
+        return []
+    body = json.dumps({"model": model, "input": texts}).encode("utf-8")
+    request = urllib.request.Request(
+        "https://api.openai.com/v1/embeddings",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {settings.openai_api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=120) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    by_index = {int(item["index"]): item["embedding"] for item in payload["data"]}
+    return [by_index[index] for index in range(len(texts))]

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+from functools import lru_cache
 from typing import Any
 
 from backend.config import settings
@@ -59,7 +60,15 @@ def doc_id_from_vertex(vid: str) -> str:
 
 
 def embed_text(text: str) -> list[float]:
-    """Deterministic 32-dim hashed bag-of-tokens, L2-normalized."""
+    """32-dim embedding: OpenAI projected down when a key is set, else hashed tokens."""
+    if settings.openai_api_key.strip():
+        from backend.llm import embed_texts
+
+        return _project(embed_texts([text])[0])
+    return _hash_embed(text)
+
+
+def _hash_embed(text: str) -> list[float]:
     vec = [0.0] * VECTOR_DIM
     for token in sorted(_tokens(text)):
         digest = hashlib.md5(token.encode("utf-8")).digest()
@@ -67,6 +76,20 @@ def embed_text(text: str) -> list[float]:
         sign = 1.0 if digest[1] % 2 == 0 else -1.0
         weight = 1.0 + digest[2] / 255.0
         vec[bucket] += sign * weight
+    return _normalize(vec)
+
+
+def _project(source: list[float]) -> list[float]:
+    out = [0.0] * VECTOR_DIM
+    for index, value in enumerate(source):
+        digest = hashlib.md5(f"proj-{index}".encode("utf-8")).digest()
+        for dim in range(VECTOR_DIM):
+            bit = (digest[dim % 16] >> (dim % 8)) & 1
+            out[dim] += value if bit else -value
+    return _normalize(out)
+
+
+def _normalize(vec: list[float]) -> list[float]:
     norm = math.sqrt(sum(value * value for value in vec)) or 1.0
     return [value / norm for value in vec]
 
@@ -74,21 +97,35 @@ def embed_text(text: str) -> list[float]:
 def rag_rows() -> list[tuple[str, dict[str, Any]]]:
     from backend.retrieve.search import all_corpus_docs
 
+    docs = all_corpus_docs(full_bank_notes=True)
+    texts = [f"{doc.title} {doc.text[:8000]} {doc.pattern}" for doc in docs]
+    vectors = _embed_many(texts)
     rows: list[tuple[str, dict[str, Any]]] = []
-    for doc in all_corpus_docs():
-        text = doc.text[:8000]
+    for doc, text, vector in zip(docs, texts, vectors):
+        stored = doc.text[:8000]
         rows.append(
             (
                 vertex_id(doc.doc_id),
                 {
                     "title": doc.title[:200],
-                    "text": text,
+                    "text": stored,
                     "kind": _doc_kind(doc.doc_id),
-                    "embedding": embed_text(f"{doc.title} {text} {doc.pattern}"),
+                    "embedding": vector,
                 },
             )
         )
     return rows
+
+
+def _embed_many(texts: list[str]) -> list[list[float]]:
+    if not settings.openai_api_key.strip():
+        return [_hash_embed(text) for text in texts]
+    from backend.llm import embed_texts
+
+    out: list[list[float]] = []
+    for start in range(0, len(texts), 64):
+        out.extend(_project(item) for item in embed_texts(texts[start : start + 64]))
+    return out
 
 
 def upsert_rag_documents() -> int:
@@ -112,6 +149,35 @@ def upsert_rag_documents() -> int:
     return written
 
 
+def repair_closed_case_notes() -> int:
+    """Write full analyst_notes onto existing ClosedCase vertices."""
+    if not settings.tg_host.strip():
+        raise RuntimeError("TG_HOST is empty")
+    from backend.graph.export import PROCESSED_DIR, RAW_DIR
+    from backend.graph.tools import _connection
+    from backend.retrieve.search import _load_closed_notes
+
+    existing = {doc.entity_ids[0] for doc in _load_closed_notes(PROCESSED_DIR / "vertices_closed_case.csv") if doc.entity_ids}
+    full = {
+        doc.entity_ids[0]: doc.text[:8000]
+        for doc in _load_closed_notes(RAW_DIR / "closed_cases_history.csv")
+        if doc.entity_ids
+    }
+    rows = [(case_id, {"analyst_notes": full[case_id]}) for case_id in existing if case_id in full]
+    conn = _connection()
+    written = 0
+    for start in range(0, len(rows), _BATCH):
+        batch = rows[start : start + _BATCH]
+        try:
+            conn.upsertVertices("ClosedCase", batch)
+            written += len(batch)
+        except Exception:
+            for case_id, attrs in batch:
+                conn.upsertVertex("ClosedCase", case_id, attrs)
+                written += 1
+    return written
+
+
 def retrieve_from_graph(facts: Any, pattern: FraudPattern, limit: int = 4) -> list[Evidence] | None:
     from backend.graph.tools import get_graph_tools
     from backend.retrieve.search import query_text
@@ -119,7 +185,7 @@ def retrieve_from_graph(facts: Any, pattern: FraudPattern, limit: int = 4) -> li
     query_vec = embed_text(query_text(facts, pattern))
     try:
         payload = get_graph_tools().run_installed_query(
-            "rag_search", {"query_vec": query_vec, "k": max(limit * 4, 16)}
+            "rag_search", {"query_vec": query_vec, "k": max(limit * 16, 64)}
         )
     except Exception:
         return None
@@ -142,7 +208,7 @@ def retrieve_from_graph(facts: Any, pattern: FraudPattern, limit: int = 4) -> li
             Evidence(
                 claim=f"{title}: {text}",
                 source=EvidenceSource.DOCUMENT,
-                ref=f"document:{doc_id}",
+                ref=f"query:rag_search({doc_id})",
                 entity_ids=_entity_ids(doc_id),
             )
         )
@@ -199,9 +265,19 @@ def _hits_from_payload(payload: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _entity_ids(doc_id: str) -> list[str]:
-    if doc_id.startswith("closed_case/"):
-        return [doc_id.split("/", 1)[1]]
-    return []
+    if not doc_id.startswith("closed_case/"):
+        return []
+    case_id = doc_id.split("/", 1)[1]
+    return [case_id] if case_id in _known_closed_ids() else []
+
+
+@lru_cache(maxsize=1)
+def _known_closed_ids() -> frozenset[str]:
+    from backend.graph.export import PROCESSED_DIR
+    from backend.retrieve.search import _load_closed_notes
+
+    path = PROCESSED_DIR / "vertices_closed_case.csv"
+    return frozenset(doc.entity_ids[0] for doc in _load_closed_notes(path) if doc.entity_ids)
 
 
 def _cosine(left: list[float], right: list[float]) -> float:
@@ -215,5 +291,6 @@ def _tokens(text: str) -> set[str]:
 
 
 if __name__ == "__main__":
+    notes = repair_closed_case_notes()
     count = upsert_rag_documents()
-    print(f"upserted {count} RagDocument vertices")
+    print(f"repaired {notes} ClosedCase notes; upserted {count} RagDocument vertices")

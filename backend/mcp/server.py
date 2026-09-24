@@ -11,19 +11,20 @@ from __future__ import annotations
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from tigergraph_mcp.tool_names import TigerGraphToolName
 
 from backend.graph.tools import get_graph_tools
 
 mcp = FastMCP("traceguard-tigergraph")
 
 
-@mcp.tool(name="tigergraph__run_query")
+@mcp.tool(name=TigerGraphToolName.RUN_QUERY.value)
 def run_query(queryName: str, params: dict[str, Any] | None = None) -> list:
     """Official tigergraph-mcp name, mapped to installed FraudGraph queries."""
     return get_graph_tools().run_installed_query(queryName, params or {})
 
 
-@mcp.tool(name="tigergraph__run_installed_query")
+@mcp.tool(name=TigerGraphToolName.RUN_INSTALLED_QUERY.value)
 def run_installed_query(queryName: str, params: dict[str, Any] | None = None) -> list:
     """Run an installed GSQL query on FraudGraph."""
     return get_graph_tools().run_installed_query(queryName, params or {})
@@ -90,6 +91,19 @@ def rag_search(query: str, k: int = 8) -> list:
 
     return get_graph_tools().run_installed_query(
         "rag_search", {"query_vec": embed_text(query), "k": k}
+    )
+
+
+@mcp.tool(name=TigerGraphToolName.SEARCH_TOP_K_SIMILARITY.value)
+def search_top_k_similarity(
+    query_vector: list[float],
+    top_k: int = 8,
+    vertex_type: str = "RagDocument",
+    vector_attribute: str = "embedding",
+) -> list:
+    """Official tigergraph-mcp vector search, mapped to FraudGraph rag_search."""
+    return get_graph_tools().run_installed_query(
+        "rag_search", {"query_vec": query_vector, "k": top_k}
     )
 
 
