@@ -120,9 +120,9 @@ def _facts_from_csv(item: CasePackItem, processed_dir: Path) -> CaseFacts:
 
 
 def _facts_from_payload(item: CasePackItem, payload: list) -> CaseFacts:
-    from backend.graph.parse import vertices
+    from backend.graph.parse import flagged_vertex, vertices
 
-    flagged_row = vertices(payload, "t")[0]
+    flagged_row = flagged_vertex(payload)
     card_row = vertices(payload, "cards")[0]
     attrs = flagged_row["attributes"]
     devices = vertices(payload, "devices")

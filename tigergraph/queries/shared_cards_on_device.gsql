@@ -6,7 +6,7 @@ CREATE QUERY shared_cards_on_device(VERTEX<DeviceProfile> d) FOR GRAPH FraudGrap
   SumAccum<INT> @@n_txns;
   start = {d};
   txns = SELECT x FROM start:s -(<FROM_DEVICE)- CardTransaction:x
-         POST-ACCUM @@n_txns += 1;
+         POST-ACCUM (x) @@n_txns += 1;
   cards = SELECT c FROM txns:x -(<MADE)- PaymentCard:c;
   PRINT d;
   PRINT @@n_txns;
