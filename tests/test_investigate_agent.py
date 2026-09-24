@@ -19,7 +19,7 @@ def test_agent_runs_facts_policy_retrieve_compose_for_hhg001() -> None:
     state = investigate_state("HHG-001")
     composed = compose_answer(load_case_facts("HHG-001"))
 
-    assert state["steps"] == ["facts", "policy", "retrieve", "compose"]
+    assert state["steps"] == ["facts", "policy", "retrieve", "compose", "explain"]
     assert state["answer"] == composed
     assert investigate("HHG-001") == composed
     assert any(item.source is EvidenceSource.DOCUMENT for item in state["documents"])
