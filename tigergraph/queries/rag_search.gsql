@@ -1,0 +1,12 @@
+USE GRAPH FraudGraph
+
+DROP QUERY rag_search
+
+CREATE QUERY rag_search(LIST<FLOAT> query_vec, INT k) FOR GRAPH FraudGraph SYNTAX v3 {
+  MapAccum<VERTEX, FLOAT> @@distances;
+  v = vectorSearch({RagDocument.embedding}, query_vec, k, {distance_map: @@distances});
+  PRINT v;
+  PRINT @@distances AS distances;
+}
+
+INSTALL QUERY rag_search

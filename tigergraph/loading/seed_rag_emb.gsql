@@ -1,0 +1,11 @@
+USE GRAPH FraudGraph
+
+DROP QUERY seed_rag_emb
+
+CREATE QUERY seed_rag_emb(VERTEX<RagDocument> d, LIST<FLOAT> emb) FOR GRAPH FraudGraph SYNTAX v3 {
+  start = {d};
+  updated = SELECT s FROM start:s POST-ACCUM (s) s.embedding = emb;
+  PRINT updated;
+}
+
+INSTALL QUERY seed_rag_emb

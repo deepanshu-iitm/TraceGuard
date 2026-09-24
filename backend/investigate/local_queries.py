@@ -34,6 +34,13 @@ class LocalGraphTools:
             return local_shared_cards(str(params["d"]))
         if name == "card_component":
             return local_card_component(str(params["c"]))
+        if name == "rag_search":
+            from backend.retrieve.vectors import local_rag_search
+
+            vec = params.get("query_vec") or []
+            if not isinstance(vec, list):
+                vec = []
+            return local_rag_search([float(item) for item in vec], int(params.get("k") or 8))
         raise KeyError(f"unknown installed query: {name}")
 
     def upsert_investigation_case(

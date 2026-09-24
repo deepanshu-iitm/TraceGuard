@@ -11,13 +11,14 @@ from backend.config import settings
 from backend.llm import complete as llm_complete
 from backend.models.answer import Answer
 
-_SYSTEM = """Rewrite only the analyst summary for a finished fraud investigation.
-Use only the JSON facts. Do not invent IDs, amounts, dates, regions, or outcomes.
+_SYSTEM = """You are the analyst-facing writer for a finished fraud investigation.
+Use only the JSON. That JSON already contains graph evidence, policy text, pattern notes, and closed-case notes (GraphRAG).
+Do not invent IDs, amounts, dates, regions, or outcomes.
 Do not change the verdict, pattern, probability, or actions.
 Reply with JSON: {"summary": "...", "sar_narrative": "..."}.
-summary is 2-4 sentences.
+summary is 2-4 sentences: what happened, which graph evidence mattered, which policy applies.
 If sar_file is false, sar_narrative must be an empty string.
-If sar_file is true, rewrite sar_narrative using the same subjects, amount, and dates."""
+If sar_file is true, rewrite sar_narrative using the same subjects, amount, and dates, grounded in the evidence list."""
 
 
 def explain_answer(answer: Answer) -> Answer:
@@ -61,7 +62,10 @@ def _prompt(answer: Answer) -> str:
             "exposure_usd": answer.case.exposure_usd,
             "status": answer.case.status.value,
             "summary": answer.case.summary,
-            "evidence": [item.claim for item in answer.case.evidence],
+            "evidence": [
+                {"claim": item.claim, "source": item.source.value, "ref": item.ref}
+                for item in answer.case.evidence
+            ],
             "final_actions": [item.action.value for item in answer.next_best_actions.final],
             "sar_file": answer.sar.file,
             "sar_reason": answer.sar.reason,

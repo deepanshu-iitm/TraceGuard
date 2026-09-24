@@ -1,0 +1,83 @@
+USE GRAPH FraudGraph
+
+DROP QUERY seed_rag_insert
+DROP QUERY seed_rag_embeddings
+DROP QUERY seed_rag_emb
+
+CREATE QUERY seed_rag_insert() FOR GRAPH FraudGraph {
+  SumAccum<INT> @@n;
+  INSERT INTO RagDocument VALUES ("policy_R1", "R1 Verify before blocking on a weak signal", "If the case rests on a single signal, including a risk score alone, and fraud probability is below 0.70, recommend VERIFY_WITH_CUSTOMER or STEP_UP_AUTH before any block.", "policy");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("policy_R2", "R2 Customer denies", "When the customer denies the transaction, recommend BLOCK_CARD and CREATE_CASE. Add FILE_REPORT when exposure exceeds 1000 USD, a shared device is present, or another card's fraud is connected.", "policy");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("policy_R3", "R3 Customer confirms", "When the customer confirms the transaction, recommend CLOSE_NO_FRAUD and record the confirmation.", "policy");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("policy_R4", "R4 No customer reply", "If the customer does not reply, MONITOR_CARD and DECLINE_TRANSACTION for pending authorizations. Escalate to an analyst when exposure exceeds 500 USD.", "policy");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("policy_R5", "R5 Card testing", "Three or more small online authorizations within one hour followed by a larger purchase: DECLINE_TRANSACTION and STEP_UP_AUTH. If a purchase over 100 USD already cleared, BLOCK_CARD.", "policy");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("policy_R6", "R6 Shared origin", "Several cards with fraud associated with the same device profile, billing region, or recipient email: CREATE_CASE, FILE_REPORT, and MONITOR_CONNECTED_CARDS for every affected card.", "policy");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("policy_R7", "R7 Disputed but legitimate recurring pattern", "If a disputed charge matches the customer's normal recurring pattern: CREATE_CASE, VERIFY_WITH_CUSTOMER, WARN_CUSTOMER. Do not block.", "policy");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("policy_R8", "R8 Uncertain and exposed", "If the case is uncertain with exposure above 500 USD, or evidence conflicts, ESCALATE_TO_ANALYST.", "policy");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("policy_R9", "R9 Coordinated undocumented abuse", "When graph expansion finds coordinated activity that does not match a named pattern, CREATE_CASE, FILE_REPORT, and ESCALATE_TO_ANALYST. Describe how the pattern was discovered.", "policy");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("policy_R10", "R10 BLOCK_ALL_CARDS", "Only recommend BLOCK_ALL_CARDS if at least two of the customer's cards show confirmed fraud or credentials are confirmed compromised.", "policy");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("pattern_card_testing", "Card testing", "Three or more small online authorizations, often under 5 USD, within about one hour, followed by a larger purchase.", "pattern");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("pattern_card_not_present_fraud", "Card-not-present fraud", "Online activity inconsistent with the cardholder's normal merchants, amounts, or product codes. A burst of a few transactions within 48 hours is common.", "pattern");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("pattern_card_not_present_new_device", "Card-not-present new device", "Same as card-not-present fraud, but the identity record shows a device not previously seen on this account. Stronger evidence, not proof: legitimate customers also use new devices.", "pattern");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("pattern_out_of_region_use", "Out-of-region use", "Card-present activity in a billing region with no prior history, while normal home activity may continue. One new region is not automatically fraud; travel can look the same.", "pattern");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("pattern_account_takeover", "Account takeover", "Mixed-channel behavior inconsistent with the cardholder, often with device and match-flag anomalies. Stolen credentials, not only a stolen card number.", "pattern");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("pattern_undocumented", "Undocumented coordinated activity", "A tight cluster of cards sharing a rare email domain or other origin, without matching card testing, new-device CNP, out-of-region use, or account takeover. Cite the graph hop that found it.", "pattern");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("reg_fincen-sar", "FinCEN suspicious activity report", "A SAR narrative should identify the subject, the dates, the amount, the account or card, and why the activity is suspicious, written so a regulator can review the episode without the rest of the case file. Do not file when the customer confirmed a legitimate purchase.", "regulatory");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("reg_fatf-r10", "FATF customer due diligence", "Financial Action Task Force Recommendation 10 requires ongoing due diligence. A weak single alert is not by itself a reason to block; verify identity and activity first.", "regulatory");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("reg_ffiec-auth", "FFIEC authentication guidance", "FFIEC guidance expects layered authentication. A new device or credential change on an online purchase is a reason to step up authentication, not automatic proof of fraud.", "regulatory");
+  @@n += 1;
+  INSERT INTO RagDocument VALUES ("reg_ofac-screening", "OFAC screening context", "OFAC screening is separate from fraud typology. Graph investigation of device, email, and region neighbors does not replace sanctions screening and should not be described as OFAC.", "regulatory");
+  @@n += 1;
+  PRINT @@n;
+}
+
+INSTALL QUERY seed_rag_insert
+RUN QUERY seed_rag_insert()
+
+CREATE QUERY seed_rag_emb(VERTEX<RagDocument> d, LIST<FLOAT> emb) FOR GRAPH FraudGraph SYNTAX v3 {
+  start = {d};
+  updated = SELECT s FROM start:s POST-ACCUM (s) s.embedding = emb;
+  PRINT updated;
+}
+
+INSTALL QUERY seed_rag_emb
+RUN QUERY seed_rag_emb("policy_R1", [0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.29196010, 0.00000000, 0.45503692, 0.30050848, -0.26039685, 0.00000000, -0.29590551, 0.00000000, -0.31563254, 0.00000000, 0.00000000, 0.01249379, -0.25973928, 0.18806439, 0.09534733, 0.00000000, 0.01709676, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.26499982, -0.28932983, 0.18017358, 0.00723325, 0.17228276, 0.18411898, 0.00000000])
+RUN QUERY seed_rag_emb("policy_R2", [0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.22411989, -0.20085061, 0.15798615, -0.45497563, -0.29637713, 0.00000000, -0.28902893, 0.00000000, 0.00000000, -0.18431718, 0.00000000, -0.30801177, -0.17084549, -0.22656929, -0.21370995, 0.27739429, 0.16288495, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.17145784, -0.29760183, -0.17207019])
+RUN QUERY seed_rag_emb("policy_R3", [0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.35203091, 0.00000000, -0.35348558, 0.00000000, 0.00000000, -0.21892831, 0.00000000, -0.05527758, 0.00000000, 0.00000000, -0.31857343, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.36003161, 0.00000000, 0.00000000, 0.00000000, 0.25674982, -0.36003161, -0.52295501])
+RUN QUERY seed_rag_emb("policy_R4", [0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.26263347, -0.28673993, 0.00000000, 0.00000000, 0.28103050, -0.24550520, 0.00000000, 0.18650783, 0.00000000, 0.00000000, 0.19285163, 0.00000000, 0.00000000, -0.05836299, 0.00000000, 0.00000000, 0.03045026, -0.30957762, 0.00000000, 0.00000000, 0.00000000, 0.25565529, 0.00000000, 0.00000000, 0.48212908, 0.17762650, 0.00000000, -0.45611949])
+RUN QUERY seed_rag_emb("policy_R5", [-0.18245901, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.20940817, 0.17406502, 0.20189775, 0.00000000, 0.15020839, 0.00000000, 0.25093637, -0.18599333, 0.40600444, 0.05919978, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.31985551, 0.20587385, 0.00000000, 0.00000000, -0.12105029, 0.50540705, -0.19438733, -0.18069186, 0.20278133, 0.12370103, -0.14711586, 0.00662684])
+RUN QUERY seed_rag_emb("policy_R6", [0.25977475, 0.00000000, 0.00000000, -0.21316194, 0.20740081, 0.00000000, 0.19168862, 0.00000000, -0.16759661, 0.24929996, 0.00000000, 0.00000000, -0.50907471, 0.00000000, -0.24301509, -0.15764556, 0.00000000, -0.41270665, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.06232499, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.36661759, -0.02461575, -0.25453735, 0.00000000])
+RUN QUERY seed_rag_emb("policy_R7", [0.00000000, 0.52007384, 0.00000000, 0.00000000, -0.26056331, 0.00000000, 0.00000000, 0.00000000, -0.20845065, 0.00000000, 0.00000000, 0.00000000, 0.15581160, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.15054769, 0.00000000, 0.00000000, -0.36636781, -0.25687858, 0.14001988, -0.20845065, 0.00000000, 0.21213538, 0.00000000, 0.00000000, 0.11106840, 0.23477017, 0.44216804, 0.00000000])
+RUN QUERY seed_rag_emb("policy_R8", [0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.36086896, 0.00000000, 0.00000000, 0.00000000, -0.30897408, 0.00000000, 0.00000000, 0.00000000, -0.24749862, 0.24270832, 0.00000000, 0.29380481, -0.30178864, 0.20837787, 0.00000000, -0.21396655, -0.37444146, 0.00000000, 0.00000000, 0.00000000, 0.32174821, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.37923176])
+RUN QUERY seed_rag_emb("policy_R9", [0.00000000, 0.00000000, 0.00000000, 0.24677278, -0.08553969, -0.27815785, 0.00000000, 0.00000000, 0.00000000, -0.21415693, 0.00000000, 0.00000000, -0.29046572, 0.19815670, 0.00000000, 0.27015773, 0.00000000, 0.25600368, 0.06707789, 0.17046399, 0.29908123, -0.30031201, 0.16369466, 0.00000000, 0.27077313, 0.00000000, 0.21600311, 0.25538829, 0.00000000, 0.00000000, -0.30215819, -0.17292557])
+RUN QUERY seed_rag_emb("policy_R10", [-0.27091907, -0.23372321, -0.52296263, 0.00000000, -0.28146715, 0.00000000, 0.00000000, -0.15155923, 0.00000000, 0.19819284, -0.26869842, 0.00000000, 0.00000000, -0.15988666, 0.00000000, -0.16710377, 0.00000000, 0.15877634, 0.00000000, -0.19930317, -0.15877634, 0.00000000, 0.00000000, 0.00000000, -0.27869134, 0.22373030, 0.00000000, 0.00000000, 0.00000000, -0.24094032, 0.23538870, 0.00000000])
+RUN QUERY seed_rag_emb("pattern_card_testing", [-0.24614439, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.28249986, -0.23958849, 0.00000000, 0.00000000, 0.20263703, 0.00000000, 0.16330161, -0.25091232, 0.26879206, -0.17045350, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.27773193, 0.00000000, 0.00000000, -0.24852836, 0.44162953, 0.00000000, 0.00000000, 0.27355999, 0.40169811, 0.00000000, 0.00893987])
+RUN QUERY seed_rag_emb("pattern_card_not_present_fraud", [-0.20781779, -0.39198562, 0.00000000, 0.00000000, 0.20177950, 0.00000000, 0.00000000, -0.16504658, -0.17108487, 0.17158806, 0.00000000, 0.00000000, 0.00000000, 0.25662730, 0.00000000, -0.15146043, -0.19574122, 0.00000000, 0.00000000, -0.23951881, 0.00000000, -0.41010049, -0.16554977, 0.00000000, -0.19976674, 0.00000000, 0.00000000, 0.00000000, -0.21385608, 0.14089342, 0.41412602, 0.13938385])
+RUN QUERY seed_rag_emb("pattern_card_not_present_new_device", [-0.16817921, 0.00000000, -0.27545631, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.10113102, 0.00000000, 0.00000000, -0.20729065, -0.21231926, 0.16538553, 0.00000000, 0.00000000, -0.16817921, 0.28327860, -0.44028310, 0.00000000, 0.00000000, -0.14974095, -0.03575903, 0.00000000, -0.22125902, 0.00000000, 0.26875149, -0.19220481, 0.00000000, 0.00000000, 0.15644577, -0.47995328, 0.17656023])
+RUN QUERY seed_rag_emb("pattern_out_of_region_use", [0.00000000, 0.00000000, -0.19918987, 0.00000000, 0.00000000, 0.00000000, 0.20648415, -0.18404022, 0.00000000, 0.39501316, 0.00000000, 0.00000000, -0.05049884, 0.00000000, -0.26034958, -0.16889057, 0.42362917, -0.21153403, 0.00000000, 0.00000000, 0.00000000, -0.27381594, -0.24295553, -0.27942692, 0.00000000, 0.19526219, -0.17506265, 0.00000000, -0.19638438, 0.15710751, 0.01458855, -0.24576103])
+RUN QUERY seed_rag_emb("pattern_account_takeover", [0.00000000, -0.29404601, -0.09302260, 0.31611917, -0.36657210, 0.00000000, 0.37366705, 0.00000000, -0.26803122, 0.00000000, 0.00000000, 0.29877597, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.24438140, 0.28616274, -0.28300943, 0.00000000, -0.38470363, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.01182491, 0.00000000, 0.00000000])
+RUN QUERY seed_rag_emb("pattern_undocumented", [0.00000000, 0.00000000, -0.01525483, 0.00000000, -0.24074025, 0.00000000, 0.62401779, -0.30891026, 0.00000000, 0.33274593, 0.00000000, 0.00000000, -0.07055358, 0.01191783, -0.13634002, 0.20927717, -0.13920030, -0.19592919, -0.01287126, 0.00000000, 0.00000000, 0.00000000, -0.20641689, 0.15016471, 0.20975388, -0.14539758, 0.00000000, 0.00000000, 0.00143014, 0.13347974, -0.17352366, -0.20641689])
+RUN QUERY seed_rag_emb("reg_fincen-sar", [0.00000000, 0.00000000, 0.16434599, 0.00000000, 0.00000000, -0.04630181, 0.00000000, -0.22133284, 0.00000000, 0.41417225, 0.00000000, 0.00000000, -0.53425167, -0.14653760, -0.25237031, 0.00000000, 0.00000000, 0.14551998, 0.00000000, 0.01933482, -0.06563663, -0.37499379, 0.00000000, 0.00000000, -0.34853561, 0.00000000, 0.00000000, 0.00000000, 0.22591214, 0.14246711, 0.00000000, -0.14297592])
+RUN QUERY seed_rag_emb("reg_fatf-r10", [0.24805088, 0.19937896, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.18354593, 0.05688164, 0.19996537, 0.00000000, 0.27443927, 0.00000000, 0.24863729, -0.19468769, 0.00000000, 0.00000000, 0.16771289, 0.00000000, 0.35770931, -0.16771289, -0.28616745, -0.17592261, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.23221785, 0.00000000, 0.15363908, 0.47499105, -0.21579840])
+RUN QUERY seed_rag_emb("reg_ffiec-auth", [0.22505015, 0.00000000, -0.43413929, -0.16386630, 0.22558218, -0.25218385, 0.20962118, 0.24313929, 0.00000000, 0.00000000, 0.25165182, -0.45595267, 0.00000000, 0.00000000, 0.00000000, 0.05267131, 0.00000000, -0.21866575, 0.00000000, 0.00000000, 0.25803622, -0.25963232, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.19738441, 0.00000000, 0.00000000, 0.14737327])
+RUN QUERY seed_rag_emb("reg_ofac-screening", [-0.16310102, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.17968756, 0.00000000, 0.00000000, 0.00000000, 0.00000000, -0.23036867, 0.00000000, 0.19535263, -0.13868194, 0.00000000, -0.34601374, 0.00000000, 0.00000000, 0.22391834, -0.41097770, -0.19949927, 0.00000000, 0.40544885, 0.22161466, 0.00000000, 0.00000000, 0.22760424, 0.43217162, 0.00000000, 0.00000000])
+DROP QUERY seed_rag_insert
+DROP QUERY seed_rag_emb

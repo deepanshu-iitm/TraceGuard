@@ -7,4 +7,5 @@ pytest
 langgraph
 pyTigerGraph
 mcp>=1.0.0,<2
+tigergraph-mcp
 python-dotenv

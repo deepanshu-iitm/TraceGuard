@@ -44,6 +44,14 @@ _NOTES: list[CorpusDoc] | None = None
 def retrieve_documents(
     facts: CaseFacts, pattern: FraudPattern, limit: int = 4
 ) -> list[Evidence]:
+    from backend.config import settings
+
+    if settings.tg_host.strip():
+        from backend.retrieve.vectors import retrieve_from_graph
+
+        hits = retrieve_from_graph(facts, pattern, limit)
+        if hits:
+            return hits
     query = _query_tokens(facts, pattern)
     policy_pool = POLICY_DOCS
     if pattern is FraudPattern.NONE:
@@ -124,6 +132,30 @@ def _as_evidence(doc: CorpusDoc) -> Evidence:
     )
 
 
+def all_corpus_docs() -> list[CorpusDoc]:
+    return list(POLICY_DOCS) + list(PATTERN_DOCS) + list(REGULATORY_DOCS) + _closed_case_docs()
+
+
+def query_text(facts: CaseFacts, pattern: FraudPattern) -> str:
+    parts = [
+        pattern.value,
+        facts.flagged.channel,
+        facts.flagged.product_cd,
+        facts.case.trigger_type.value,
+        facts.flagged.billing_region or "",
+        "verify" if pattern is FraudPattern.NONE else "fraud",
+        "device" if facts.device_profile_id else "",
+        "email" if facts.flagged.recipient_email or facts.flagged.purchaser_email else "",
+        "sar" if pattern is not FraudPattern.NONE else "signal",
+    ]
+    for case in facts.closed_cases:
+        parts.append(case.pattern)
+        parts.append(case.outcome)
+    if facts.device_profile_id:
+        parts.extend(["device", "new"])
+    return " ".join(part for part in parts if part)
+
+
 def _closed_case_docs() -> list[CorpusDoc]:
     global _NOTES
     if _NOTES is None:
@@ -153,24 +185,7 @@ def _load_closed_notes(path: Path) -> list[CorpusDoc]:
 
 
 def _query_tokens(facts: CaseFacts, pattern: FraudPattern) -> set[str]:
-    parts = [
-        pattern.value,
-        facts.flagged.channel,
-        facts.flagged.product_cd,
-        facts.case.trigger_type.value,
-        facts.flagged.billing_region or "",
-        "verify" if pattern is FraudPattern.NONE else "fraud",
-        "device" if facts.device_profile_id else "",
-        "email" if facts.flagged.recipient_email or facts.flagged.purchaser_email else "",
-        "sar" if pattern is not FraudPattern.NONE else "signal",
-    ]
-    for case in facts.closed_cases:
-        parts.append(case.pattern)
-        parts.append(case.outcome)
-    if facts.device_profile_id:
-        parts.append("device")
-        parts.append("new")
-    return _tokens(" ".join(parts))
+    return _tokens(query_text(facts, pattern))
 
 
 def _score(query: set[str], doc: CorpusDoc, pattern: FraudPattern) -> float:

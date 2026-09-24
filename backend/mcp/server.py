@@ -17,9 +17,9 @@ from backend.graph.tools import get_graph_tools
 mcp = FastMCP("traceguard-tigergraph")
 
 
-@mcp.tool(name="tigergraph__runQuery")
+@mcp.tool(name="tigergraph__run_query")
 def run_query(queryName: str, params: dict[str, Any] | None = None) -> list:
-    """Official-style TigerGraph MCP alias for runInstalledQuery."""
+    """Official tigergraph-mcp name, mapped to installed FraudGraph queries."""
     return get_graph_tools().run_installed_query(queryName, params or {})
 
 
@@ -81,6 +81,16 @@ def device_fanout(d: str) -> list:
 def card_component(c: str) -> list:
     """Two-hop component around a PaymentCard: devices, emails, linked cards."""
     return get_graph_tools().run_installed_query("card_component", {"c": c})
+
+
+@mcp.tool(name="rag_search")
+def rag_search(query: str, k: int = 8) -> list:
+    """GraphRAG vector search over RagDocument embeddings on FraudGraph."""
+    from backend.retrieve.vectors import embed_text
+
+    return get_graph_tools().run_installed_query(
+        "rag_search", {"query_vec": embed_text(query), "k": k}
+    )
 
 
 @mcp.tool(name="get_investigation_case")

@@ -1,0 +1,23 @@
+USE GLOBAL
+DROP VERTEX RagDocument
+
+USE GRAPH FraudGraph
+
+CREATE SCHEMA_CHANGE JOB add_rag_document FOR GRAPH FraudGraph {
+  ADD VERTEX RagDocument (
+    PRIMARY_ID id STRING,
+    title STRING,
+    text STRING,
+    kind STRING
+  );
+}
+
+RUN SCHEMA_CHANGE JOB add_rag_document
+DROP JOB add_rag_document
+
+CREATE SCHEMA_CHANGE JOB add_rag_embedding FOR GRAPH FraudGraph {
+  ALTER VERTEX RagDocument ADD VECTOR ATTRIBUTE embedding(DIMENSION=32, METRIC="cosine");
+}
+
+RUN SCHEMA_CHANGE JOB add_rag_embedding
+DROP JOB add_rag_embedding

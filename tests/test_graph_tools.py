@@ -32,3 +32,15 @@ def test_graph_tools_default_to_local_without_host() -> None:
 def test_unknown_query_is_rejected() -> None:
     with pytest.raises(KeyError, match="unknown installed query"):
         LocalGraphTools().run_installed_query("not_a_query", {})
+
+
+def test_local_rag_search_returns_documents() -> None:
+    from backend.retrieve.vectors import embed_text
+
+    payload = LocalGraphTools().run_installed_query(
+        "rag_search",
+        {"query_vec": embed_text("verify weak signal do not block"), "k": 8},
+    )
+    hits = payload[0]["v"]
+    assert hits
+    assert any(item["v_id"].startswith("policy:") for item in hits)
