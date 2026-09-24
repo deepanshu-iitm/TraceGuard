@@ -22,6 +22,7 @@ def test_investigate_hhg001_returns_answer_json() -> None:
     assert payload["case"]["status"] == CaseStatus.CLOSED_LEGITIMATE.value
     assert payload["case"]["verdict"] == Verdict.LEGITIMATE.value
     assert payload["sar"]["file"] is False
+    assert payload["latency_s"] >= 0
 
 
 def test_investigate_unknown_case_returns_404() -> None:

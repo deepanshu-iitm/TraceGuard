@@ -18,7 +18,8 @@ def test_analyst_page_is_served() -> None:
     assert "Graph write" in html
     assert "function escapeHtml" in html
     assert "sarBlock" in html
-    assert "@media (max-width: 800px)" in html
+    assert "id=\"mode\"" in html
+    assert 'fetch("/health")' in html
 
 
 def test_cases_lists_twenty_exam_ids() -> None:

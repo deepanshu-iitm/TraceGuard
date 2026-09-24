@@ -28,5 +28,9 @@ def analyst_page() -> FileResponse:
 
 @app.get("/health")
 def health_check() -> dict[str, str]:
-    """Return the service health status."""
-    return {"status": "ok"}
+    """Return service health and which backends are active. Never include secrets."""
+    return {
+        "status": "ok",
+        "graph": "tigergraph" if settings.tg_host.strip() else "local",
+        "llm": "on" if settings.openai_api_key.strip() else "off",
+    }

@@ -24,7 +24,9 @@ def test_agent_runs_facts_policy_retrieve_compose_for_hhg001() -> None:
 
     assert state["steps"] == ["facts", "policy", "retrieve", "compose", "explain", "persist"]
     assert state["answer"] == composed
-    assert investigate("HHG-001") == composed
+    live = investigate("HHG-001")
+    assert live.model_copy(update={"latency_s": composed.latency_s}) == composed
+    assert live.latency_s >= 0
     assert state["answer"].tool_calls >= 2
     assert any(item.source is EvidenceSource.DOCUMENT for item in state["documents"])
     assert PolicyAction.CLOSE_NO_FRAUD.value in state["final_actions"]
@@ -37,4 +39,4 @@ def test_agent_matches_composer_for_shared_device_fraud() -> None:
     assert answer.case.verdict is Verdict.FRAUD
     assert answer.tool_calls >= 3
     assert any("shared_cards_on_device" in item.ref for item in answer.case.evidence)
-    assert answer == composed
+    assert answer.model_copy(update={"latency_s": composed.latency_s}) == composed

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from operator import add
 from typing import Annotated, TypedDict
 
@@ -33,7 +34,10 @@ class InvestigateState(TypedDict, total=False):
 
 def investigate(case_id: str) -> Answer:
     """Run the investigation graph and return the exam answer."""
-    return investigate_state(case_id)["answer"]
+    started = time.perf_counter()
+    answer = investigate_state(case_id)["answer"]
+    elapsed = round(time.perf_counter() - started, 2)
+    return answer.model_copy(update={"latency_s": elapsed})
 
 
 def investigate_state(case_id: str) -> InvestigateState:

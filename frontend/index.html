@@ -66,6 +66,7 @@
   <header>
     <h1>TraceGuard</h1>
     <p>Investigate an exam case against graph facts, policy, and closed-case notes.</p>
+    <p id="mode"></p>
   </header>
   <div class="layout">
     <aside id="cases"></aside>
@@ -231,6 +232,16 @@
       .then((res) => res.json())
       .then(renderCases)
       .catch((error) => { panel.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`; });
+
+    fetch("/health")
+      .then((res) => res.json())
+      .then((health) => {
+        const mode = document.getElementById("mode");
+        if (mode) {
+          mode.textContent = `Graph ${health.graph} · LLM ${health.llm}`;
+        }
+      })
+      .catch(() => {});
   </script>
 </body>
 </html>
