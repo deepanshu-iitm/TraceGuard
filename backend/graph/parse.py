@@ -42,7 +42,10 @@ def _normalize_vertex(item: Any) -> dict[str, Any]:
     if not isinstance(item, dict):
         return {"v_id": str(item), "attributes": {}}
     vertex_id = str(item.get("v_id") or item.get("id") or "")
-    attrs = item.get("attributes") or {
-        key: value for key, value in item.items() if key not in {"v_id", "v_type", "id"}
-    }
+    if "attributes" in item:
+        attrs = item.get("attributes") or {}
+    else:
+        attrs = {
+            key: value for key, value in item.items() if key not in {"v_id", "v_type", "id"}
+        }
     return {"v_id": vertex_id, "v_type": item.get("v_type", ""), "attributes": attrs}

@@ -47,5 +47,25 @@ def get_investigation_case(c: str) -> list:
     return get_graph_tools().run_installed_query("get_investigation_case", {"c": c})
 
 
+@mcp.tool(name="upsert_investigation_case")
+def upsert_investigation_case(c: str) -> dict:
+    """Write a saved exam-case answer onto InvestigationCase vertices and CASE_* edges."""
+    from backend.investigate.compose import CASES_DIR
+    from backend.investigate.persist import write_investigation_case
+    from backend.models.answer import Answer
+
+    path = CASES_DIR / f"{c}.json"
+    if not path.is_file():
+        raise FileNotFoundError(f"no saved answer for {c}")
+    answer = write_investigation_case(
+        Answer.model_validate_json(path.read_text(encoding="utf-8"))
+    )
+    return {
+        "case_id": answer.case_id,
+        "written_to_graph": answer.case.written_to_graph,
+        "graph_case_id": answer.case.graph_case_id,
+    }
+
+
 if __name__ == "__main__":
     mcp.run()

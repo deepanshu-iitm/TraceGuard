@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+from pathlib import Path
 from typing import Any
 
 from backend.graph.export import PROCESSED_DIR
@@ -19,7 +21,7 @@ class LocalGraphTools:
         if name == "shared_cards_on_device":
             return local_shared_cards(str(params["d"]))
         if name == "get_investigation_case":
-            return [{"c": [{"v_id": str(params.get("c", "")), "attributes": {}}]}]
+            return local_investigation_case(str(params.get("c", "")))
         raise KeyError(f"unknown installed query: {name}")
 
     def upsert_investigation_case(
@@ -108,6 +110,71 @@ def local_shared_cards(profile: str) -> list[dict[str, Any]]:
         {"@@n_txns": n_txns},
         {"cards": [_card_vertex(index.card(card_id)) for card_id in card_ids]},
     ]
+
+
+def local_investigation_case(
+    case_id: str, processed_dir: Path | None = None
+) -> list[dict[str, Any]]:
+    dest = processed_dir or PROCESSED_DIR
+    vertex = next(
+        (row for row in _csv_rows(dest / "vertices_investigation_case.csv") if row.get("id") == case_id),
+        None,
+    )
+    edges = [
+        row
+        for row in _csv_rows(dest / "case_edges.csv")
+        if row.get("from_id") == case_id
+    ]
+    attrs: dict[str, Any] = {}
+    if vertex:
+        attrs = {
+            "status": vertex.get("status", ""),
+            "verdict": vertex.get("verdict", ""),
+            "fraud_probability": _maybe_float(vertex.get("fraud_probability")),
+            "pattern": vertex.get("pattern", ""),
+            "pattern_description": vertex.get("pattern_description", ""),
+            "exposure_usd": _maybe_float(vertex.get("exposure_usd")),
+            "summary": vertex.get("summary", ""),
+            "stop_reason": vertex.get("stop_reason", ""),
+        }
+    return [
+        {
+            "c": [
+                {
+                    "v_id": case_id,
+                    "v_type": "InvestigationCase",
+                    "attributes": attrs,
+                }
+            ]
+        },
+        {"cards": _edge_vertices(edges, "case_on_card")},
+        {"customers": _edge_vertices(edges, "case_for_customer")},
+        {"prior": _edge_vertices(edges, "case_matches")},
+    ]
+
+
+def _edge_vertices(edges: list[dict[str, str]], kind: str) -> list[dict[str, Any]]:
+    return [
+        {"v_id": row["to_id"], "attributes": {}}
+        for row in edges
+        if row.get("edge_type") == kind and row.get("to_id")
+    ]
+
+
+def _csv_rows(path: Path) -> list[dict[str, str]]:
+    if not path.is_file():
+        return []
+    with path.open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _maybe_float(value: str | None) -> float | str:
+    if value is None or value == "":
+        return 0.0
+    try:
+        return float(value)
+    except ValueError:
+        return value
 
 
 def _txn_vertex(txn: TxnFact) -> dict[str, Any]:
