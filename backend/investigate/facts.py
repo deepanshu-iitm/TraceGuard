@@ -24,6 +24,7 @@ class TxnFact:
     risk_score: float
     billing_region: str
     billing_country: str
+    device_profile_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -94,7 +95,7 @@ def load_case_facts(case_id: str, processed_dir: Path | None = None) -> CaseFact
         customer_card_ids=tuple(sorted(index.owns.get(item.customer_id, ()))),
         history=history,
         closed_cases=closed,
-        device_profile_id=index.device.get(item.flagged_txn_id, ""),
+        device_profile_id=flagged.device_profile_id,
     )
 
 
@@ -202,6 +203,10 @@ def _load_index(processed_dir: Path) -> _GraphIndex:
     closed = {
         case_id: replace(fact, txn_ids=involves_by_case.get(case_id, ()))
         for case_id, fact in closed.items()
+    }
+    txns = {
+        txn_id: replace(txn, device_profile_id=device.get(txn_id, ""))
+        for txn_id, txn in txns.items()
     }
     return _GraphIndex(
         txns=txns,
