@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -20,7 +21,7 @@ from backend.models.enums import CaseStatus, FraudPattern, TriggerType
 from backend.models.evidence import Evidence, EvidenceSource
 from backend.models.verdict import Verdict
 from backend.policy.actions import PolicyAction
-from backend.policy.rules import CustomerResponse, PolicySnapshot, recommend_actions
+from backend.policy.rules import CustomerResponse, PolicySnapshot, RecommendedAction, recommend_actions
 from backend.policy.stopping import StopSnapshot, stop_decision
 from backend.retrieve import retrieve_documents
 
@@ -41,7 +42,21 @@ _REASON = {
 }
 
 
-def compose_answer(facts: CaseFacts) -> Answer:
+@dataclass(frozen=True)
+class InvestigationDecision:
+    """Pattern, policy actions, and stop reason for one case."""
+
+    pattern: FraudPattern
+    fraud_probability: float
+    assumed: CustomerResponse | None
+    disputed: bool
+    initial: list[RecommendedAction]
+    final: list[RecommendedAction]
+    requests: list[EvidenceRequest]
+    stop_reason: str
+
+
+def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
     pattern = _pattern(facts)
     graph_p = _probability(facts, pattern)
     testing, cleared = _card_testing(facts)
@@ -55,7 +70,6 @@ def compose_answer(facts: CaseFacts) -> Answer:
     exposure = 0.0 if pattern is FraudPattern.NONE and not shared else abs(facts.flagged.amount)
     assumed: CustomerResponse | None
     requests: list[EvidenceRequest] = []
-    connected = [card_id for card_id in facts.device_card_ids if card_id != facts.card.card_id]
 
     if recurring:
         final_snap = PolicySnapshot(
@@ -138,6 +152,37 @@ def compose_answer(facts: CaseFacts) -> Answer:
             further_steps_unlikely=final_snap.customer_response is None,
         )
     )
+    return InvestigationDecision(
+        pattern=pattern,
+        fraud_probability=graph_p,
+        assumed=assumed,
+        disputed=disputed,
+        initial=initial,
+        final=final,
+        requests=requests,
+        stop_reason=stop.reason or "Further steps are unlikely to change the decision.",
+    )
+
+
+def compose_answer(
+    facts: CaseFacts, documents: list[Evidence] | None = None
+) -> Answer:
+    decision = decide_investigation(facts)
+    docs = documents if documents is not None else retrieve_documents(facts, decision.pattern)
+    return _build_answer(facts, decision, docs)
+
+
+def _build_answer(
+    facts: CaseFacts, decision: InvestigationDecision, documents: list[Evidence]
+) -> Answer:
+    pattern = decision.pattern
+    graph_p = decision.fraud_probability
+    assumed = decision.assumed
+    disputed = decision.disputed
+    initial = decision.initial
+    final = decision.final
+    requests = decision.requests
+    connected = [card_id for card_id in facts.device_card_ids if card_id != facts.card.card_id]
     verdict = _verdict(final, pattern)
     status = _status(final, verdict)
     affected = [] if verdict is Verdict.LEGITIMATE else [facts.flagged.txn_id]
@@ -162,6 +207,7 @@ def compose_answer(facts: CaseFacts) -> Answer:
                 facts,
                 assumed if not disputed else CustomerResponse.DENY,
                 pattern,
+                documents,
             ),
             similar_prior_cases=[case.case_id for case in facts.closed_cases],
             summary=_summary(facts, verdict, pattern, graph_p),
@@ -175,7 +221,7 @@ def compose_answer(facts: CaseFacts) -> Answer:
             what_changed=_what_changed(initial, final, assumed, disputed),
         ),
         sar=_sar(facts, filed, verdict, final),
-        stop_reason=stop.reason or "Further steps are unlikely to change the decision.",
+        stop_reason=decision.stop_reason,
         tool_calls=6,
         tokens=0,
         latency_s=0.0,
@@ -337,7 +383,10 @@ def _device_profiles(facts: CaseFacts, verdict: Verdict) -> list[str]:
 
 
 def _evidence(
-    facts: CaseFacts, response: CustomerResponse | None, pattern: FraudPattern
+    facts: CaseFacts,
+    response: CustomerResponse | None,
+    pattern: FraudPattern,
+    documents: list[Evidence],
 ) -> list[Evidence]:
     flagged = facts.flagged
     region_prior = facts.prior_in_region()
@@ -396,7 +445,7 @@ def _evidence(
                 entity_ids=[],
             )
         )
-    items.extend(retrieve_documents(facts, pattern))
+    items.extend(documents)
     return items
 
 
