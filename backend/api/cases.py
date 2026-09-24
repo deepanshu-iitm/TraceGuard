@@ -17,6 +17,20 @@ def list_cases() -> list[CasePackItem]:
     return load_case_pack()
 
 
+@router.get("/stats")
+def exam_stats() -> dict[str, int]:
+    verdicts = {"fraud": 0, "legitimate": 0, "uncertain": 0, "sar": 0, "exam": 0}
+    for path in sorted(CASES_DIR.glob("HHG-*.json")):
+        answer = Answer.model_validate_json(path.read_text(encoding="utf-8"))
+        verdicts["exam"] += 1
+        key = answer.case.verdict.value
+        if key in verdicts:
+            verdicts[key] += 1
+        if answer.sar.file:
+            verdicts["sar"] += 1
+    return verdicts
+
+
 @router.get("/cases/{case_id}", response_model=Answer)
 def saved_answer(case_id: str) -> Answer:
     if not any(item.case_id == case_id for item in load_case_pack()):
