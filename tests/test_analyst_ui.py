@@ -16,6 +16,10 @@ def test_analyst_page_is_served() -> None:
     assert "Evidence requests" in html
     assert "Connected cards" in html
     assert "Graph write" in html
+    assert "Neighborhood" in html
+    assert "Timeline" in html
+    assert "Approvals" in html
+    assert "/graph/" in html
     assert "function escapeHtml" in html
     assert "sarBlock" in html
     assert "id=\"mode\"" in html

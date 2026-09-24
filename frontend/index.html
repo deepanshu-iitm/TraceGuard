@@ -24,7 +24,7 @@
     }
     header h1 { margin: 0; font-size: 18px; letter-spacing: 0.04em; }
     header p { margin: 0; color: var(--muted); }
-    .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100% - 57px); }
+    .layout { display: grid; grid-template-columns: 280px 1fr; height: calc(100% - 57px); }
     aside { border-right: 1px solid var(--line); overflow: auto; }
     .case {
       width: 100%; text-align: left; background: transparent; color: inherit;
@@ -56,9 +56,21 @@
     pre { background: #0b1015; border: 1px solid var(--line); padding: 12px; overflow: auto; font-size: 12px; }
     details { margin-top: 24px; }
     details summary { cursor: pointer; color: var(--muted); }
+    .console { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+    .panel-box { background: var(--panel); border: 1px solid var(--line); padding: 12px; min-height: 280px; }
+    #graph { width: 100%; height: 320px; display: block; }
+    .timeline { max-height: 320px; overflow: auto; }
+    .timeline li { list-style: none; margin: 0 0 8px; padding: 8px; border-left: 3px solid var(--line); }
+    .timeline { margin: 0; padding: 0; }
+    .timeline li.flagged { border-color: var(--accent); }
+    .timeline li.episode { border-color: var(--bad); }
+    .route { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warn); }
+    .route.auto { color: var(--ok); }
+    .route.l2 { color: var(--bad); }
     @media (max-width: 800px) {
       .layout { grid-template-columns: 1fr; height: auto; }
       aside { max-height: 240px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .console { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -138,16 +150,16 @@
       [...casesEl.children].forEach((el) => el.classList.remove("active"));
       btn.classList.add("active");
       panel.innerHTML = `<p>Loading saved answer for ${escapeHtml(item.case_id)}…</p>`;
-      fetch(`/cases/${encodeURIComponent(item.case_id)}`)
-        .then((res) => {
+      Promise.all([
+        fetch(`/cases/${encodeURIComponent(item.case_id)}`).then((res) => {
           if (!res.ok) {
-            return res.json().then((err) => {
-              throw new Error(err.detail || `HTTP ${res.status}`);
-            });
+            return res.json().then((err) => { throw new Error(err.detail || `HTTP ${res.status}`); });
           }
           return res.json();
-        })
-        .then((answer) => renderAnswer(answer, "saved"))
+        }),
+        fetch(`/graph/${encodeURIComponent(item.case_id)}`).then((res) => res.ok ? res.json() : null).catch(() => null),
+      ])
+        .then(([answer, graph]) => renderAnswer(answer, "saved", graph))
         .catch((error) => {
           panel.innerHTML = `
             <p><strong>${escapeHtml(item.case_id)}</strong> · card ${escapeHtml(item.card_id)} · txn ${escapeHtml(item.flagged_txn_id)}</p>
@@ -171,7 +183,9 @@
           const err = await response.json().catch(() => ({ detail: response.statusText }));
           throw new Error(err.detail || `HTTP ${response.status}`);
         }
-        renderAnswer(await response.json(), "live");
+        const answer = await response.json();
+        const graph = await fetch(`/graph/${encodeURIComponent(caseId)}`).then((res) => res.ok ? res.json() : null).catch(() => null);
+        renderAnswer(answer, "live", graph);
       } catch (error) {
         panel.insertAdjacentHTML("beforeend", `<p class="error">${escapeHtml(error.message)}</p>`);
         if (run) {
@@ -181,12 +195,16 @@
       }
     }
 
-    function renderAnswer(answer, source) {
+    function renderAnswer(answer, source, graph) {
       const c = answer.case;
       const sourceLabel = source === "live" ? "Live investigation." : "Saved exam answer.";
       const graphWrite = c.written_to_graph
         ? `Written as ${c.graph_case_id}`
         : "Not written";
+      const timeline = (graph && graph.timeline) || [];
+      const approvals = (graph && graph.approvals) || answer.next_best_actions.final.map((item) => ({
+        action: item.action, route: item.route, reason: item.reason,
+      }));
       panel.innerHTML = `
         <div class="banner">
           <div>
@@ -199,6 +217,27 @@
         <p>${escapeHtml(answer.stop_reason)}</p>
         <p class="source">${sourceLabel} · ${escapeHtml(graphWrite)} · ${escapeHtml(answer.tool_calls)} graph hops</p>
         <p><button class="run" id="run">Investigate</button></p>
+        <div class="console">
+          <div class="panel-box">
+            <h2>Neighborhood</h2>
+            <svg id="graph" viewBox="0 0 640 320"></svg>
+          </div>
+          <div class="panel-box">
+            <h2>Timeline</h2>
+            <ul class="timeline">${timeline.map((row) => `
+              <li class="${row.flagged ? "flagged" : ""} ${row.episode ? "episode" : ""}">
+                <strong>${escapeHtml(row.ts)}</strong>
+                · ${escapeHtml(row.txn_id)}
+                · $${Number(row.amount).toFixed(2)}
+                · ${escapeHtml(row.channel)}
+                ${row.flagged ? "<span class='source'>flagged</span>" : ""}
+              </li>`).join("") || "<li class='source'>No history loaded.</li>"}</ul>
+          </div>
+        </div>
+        <h2>Approvals</h2>
+        <ul class="actions">${approvals.map((item) =>
+          `<li><span class="route ${escapeHtml(String(item.route).toLowerCase())}">${escapeHtml(item.route)}</span> <strong>${escapeHtml(item.action)}</strong><div class="source">${escapeHtml(item.reason)}</div></li>`
+        ).join("")}</ul>
         <h2>Connected cards</h2>
         ${listOrNone(c.connected_card_ids)}
         <h2>Connected devices</h2>
@@ -226,6 +265,51 @@
         </details>
       `;
       document.getElementById("run").onclick = () => runInvestigation(answer.case_id);
+      if (graph) drawGraph(graph);
+    }
+
+    function drawGraph(graph) {
+      const svg = document.getElementById("graph");
+      if (!svg) return;
+      const nodes = graph.nodes || [];
+      const edges = graph.edges || [];
+      const colors = {
+        case: "#3d8bfd",
+        card: "#3dd68c",
+        customer: "#f5c542",
+        txn: "#ff6b6b",
+        device: "#9b8cff",
+        email: "#6bcbef",
+        region: "#8ea0b5",
+        closed: "#d08a4c",
+      };
+      const width = 640;
+      const height = 320;
+      const cx = width / 2;
+      const cy = height / 2;
+      const radius = Math.min(width, height) / 2 - 48;
+      const placed = nodes.map((node, index) => {
+        const angle = (Math.PI * 2 * index) / Math.max(nodes.length, 1) - Math.PI / 2;
+        return {
+          ...node,
+          x: cx + radius * Math.cos(angle),
+          y: cy + radius * Math.sin(angle),
+        };
+      });
+      const byId = Object.fromEntries(placed.map((node) => [node.id, node]));
+      const lines = edges.map((edge) => {
+        const src = byId[edge.from];
+        const dst = byId[edge.to];
+        if (!src || !dst) return "";
+        return `<line x1="${src.x}" y1="${src.y}" x2="${dst.x}" y2="${dst.y}" stroke="#2a3544" stroke-width="1.5" />`;
+      }).join("");
+      const circles = placed.map((node) => `
+        <g>
+          <circle cx="${node.x}" cy="${node.y}" r="14" fill="${colors[node.type] || "#8ea0b5"}" />
+          <text x="${node.x}" y="${node.y + 28}" text-anchor="middle" fill="#e7eef7" font-size="10">${escapeHtml((node.label || node.id).slice(0, 22))}</text>
+        </g>
+      `).join("");
+      svg.innerHTML = lines + circles;
     }
 
     fetch("/cases")
