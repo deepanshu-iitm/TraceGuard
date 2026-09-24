@@ -12,3 +12,5 @@ def test_all_twenty_answer_files_match_the_schema() -> None:
     for path in paths:
         answer = Answer.model_validate(json.loads(path.read_text(encoding="utf-8")))
         assert answer.case_id == path.stem
+        assert answer.case.written_to_graph is True
+        assert answer.case.graph_case_id == path.stem

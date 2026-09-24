@@ -1,0 +1,12 @@
+USE GRAPH FraudGraph
+DROP QUERY get_investigation_case
+CREATE QUERY get_investigation_case(VERTEX<InvestigationCase> c) FOR GRAPH FraudGraph {
+  start = {c};
+  cards = SELECT x FROM start:s -(CASE_ON_CARD>)- PaymentCard:x;
+  customers = SELECT u FROM start:s -(CASE_FOR_CUSTOMER>)- Customer:u;
+  prior = SELECT cc FROM start:s -(CASE_MATCHES>)- ClosedCase:cc;
+  PRINT c.status, c.verdict, c.fraud_probability, c.pattern, c.exposure_usd, c.summary, c.stop_reason;
+  PRINT cards;
+  PRINT customers;
+  PRINT prior;
+}

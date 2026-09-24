@@ -1,0 +1,20 @@
+USE GRAPH FraudGraph
+
+DROP QUERY investigate_txn
+
+CREATE QUERY investigate_txn(VERTEX<CardTransaction> t) FOR GRAPH FraudGraph {
+  SumAccum<INT> @@n_history;
+
+  start = {t};
+  cards = SELECT c FROM start:s -(<MADE)- PaymentCard:c;
+  customers = SELECT u FROM cards:c -(<OWNS)- Customer:u;
+  closed = SELECT cc FROM cards:c -(<ON_CARD)- ClosedCase:cc;
+  history = SELECT x FROM cards:c -(MADE>)- CardTransaction:x
+            POST-ACCUM @@n_history += 1;
+
+  PRINT t.amount, t.ts, t.channel, t.risk_score, t.billing_region, t.billing_country, t.product_cd;
+  PRINT cards;
+  PRINT customers;
+  PRINT closed;
+  PRINT @@n_history;
+}

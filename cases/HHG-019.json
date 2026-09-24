@@ -77,8 +77,8 @@
       "CC-5026"
     ],
     "summary": "HHG-019 is a risk_score alert on a 99.92 USD online purchase in billing region 264.0. Graph history shows 5 prior purchases in that region. Pattern is card_not_present_new_device; fraud probability 0.74. Verdict is fraud.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "written_to_graph": true,
+    "graph_case_id": "HHG-019"
   },
   "evidence_requests": [
     {

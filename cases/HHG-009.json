@@ -42,8 +42,8 @@
     ],
     "similar_prior_cases": [],
     "summary": "HHG-009 is a customer_report alert on a 30.02 USD online purchase in billing region 203.0. Graph history shows 1 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.58. Verdict is fraud.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "written_to_graph": true,
+    "graph_case_id": "HHG-009"
   },
   "evidence_requests": [],
   "next_best_actions": {

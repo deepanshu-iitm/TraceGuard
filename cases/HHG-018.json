@@ -779,8 +779,8 @@
       "CC-5558"
     ],
     "summary": "HHG-018 is a customer_report alert on a 39.08 USD in_person purchase in billing region 126.0. Graph history shows 565 prior purchases in that region. Pattern is none; fraud probability 0.12. Verdict is legitimate.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "written_to_graph": true,
+    "graph_case_id": "HHG-018"
   },
   "evidence_requests": [],
   "next_best_actions": {

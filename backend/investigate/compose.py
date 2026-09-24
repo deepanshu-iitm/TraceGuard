@@ -160,8 +160,8 @@ def compose_answer(facts: CaseFacts) -> Answer:
             evidence=_evidence(facts, assumed if not disputed else CustomerResponse.DENY),
             similar_prior_cases=[case.case_id for case in facts.closed_cases],
             summary=_summary(facts, verdict, pattern, graph_p),
-            written_to_graph=False,
-            graph_case_id="",
+            written_to_graph=True,
+            graph_case_id=facts.case.case_id,
         ),
         evidence_requests=requests,
         next_best_actions=NextBestActions(

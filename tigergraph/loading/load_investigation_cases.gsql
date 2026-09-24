@@ -1,0 +1,18 @@
+CREATE LOADING JOB load_investigation_cases FOR GRAPH FraudGraph {
+  DEFINE FILENAME cases;
+  DEFINE FILENAME case_edges;
+
+  LOAD cases TO VERTEX InvestigationCase VALUES ($0, $1, $2, $3, $4, $5, $6, $7, $8)
+    USING header="true", separator=",";
+
+  LOAD case_edges TO EDGE CASE_FOR_CUSTOMER VALUES ($1, $2)
+    WHERE $0 == "case_for_customer" USING header="true", separator=",";
+  LOAD case_edges TO EDGE CASE_INVOLVES VALUES ($1, $2)
+    WHERE $0 == "case_involves" USING header="true", separator=",";
+  LOAD case_edges TO EDGE CASE_ON_CARD VALUES ($1, $2)
+    WHERE $0 == "case_on_card" USING header="true", separator=",";
+  LOAD case_edges TO EDGE CASE_CONNECTED_TO VALUES ($1, $2)
+    WHERE $0 == "case_connected_to" USING header="true", separator=",";
+  LOAD case_edges TO EDGE CASE_MATCHES VALUES ($1, $2)
+    WHERE $0 == "case_matches" USING header="true", separator=",";
+}

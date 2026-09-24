@@ -24,6 +24,8 @@ def test_composer_matches_hhg001_verdict_and_actions() -> None:
     assert answer.case.exposure_usd == 0
     assert answer.case.fraud_probability == 0.12
     assert answer.sar.file is False
+    assert answer.case.written_to_graph is True
+    assert answer.case.graph_case_id == "HHG-001"
     assert [item.action for item in answer.next_best_actions.initial] == [
         PolicyAction.VERIFY_WITH_CUSTOMER,
         PolicyAction.CREATE_CASE,
