@@ -202,6 +202,19 @@ def _facts_from_payload(item: CasePackItem, payload: list) -> CaseFacts:
     )
 
 
+def merge_shared_cards(facts: CaseFacts, payload: list) -> CaseFacts:
+    """Union cards from shared_cards_on_device into the case neighborhood."""
+    from backend.graph.parse import vertices
+
+    extra = {row["v_id"] for row in vertices(payload, "cards") if row.get("v_id")}
+    if not extra:
+        return facts
+    cards = tuple(sorted(set(facts.device_card_ids) | extra))
+    if cards == facts.device_card_ids:
+        return facts
+    return replace(facts, device_card_ids=cards)
+
+
 def _case_pack_item(case_id: str) -> CasePackItem:
     for item in load_case_pack():
         if item.case_id == case_id:

@@ -10,7 +10,7 @@ from langgraph.graph import END, START, StateGraph
 from backend.graph.tools import get_graph_tools
 from backend.investigate.compose import compose_answer, decide_investigation
 from backend.investigate.explain import explain_answer
-from backend.investigate.facts import CaseFacts, load_case_facts
+from backend.investigate.facts import CaseFacts, load_case_facts, merge_shared_cards
 from backend.models.answer import Answer
 from backend.models.enums import FraudPattern
 from backend.models.evidence import Evidence
@@ -24,6 +24,7 @@ class InvestigateState(TypedDict, total=False):
     documents: list[Evidence]
     initial_actions: list[str]
     final_actions: list[str]
+    tool_calls: int
     answer: Answer
     steps: Annotated[list[str], add]
 
@@ -40,11 +41,18 @@ def investigate_state(case_id: str) -> InvestigateState:
 def _facts(state: InvestigateState) -> dict:
     facts = load_case_facts(state["case_id"])
     tools = get_graph_tools()
+    calls = 0
     tools.run_installed_query("get_case_facts", {"t": facts.flagged.txn_id})
+    calls += 1
     tools.run_installed_query("investigate_txn", {"t": facts.flagged.txn_id})
+    calls += 1
     if facts.device_profile_id:
-        tools.run_installed_query("shared_cards_on_device", {"d": facts.device_profile_id})
-    return {"facts": facts, "steps": ["facts"]}
+        shared = tools.run_installed_query(
+            "shared_cards_on_device", {"d": facts.device_profile_id}
+        )
+        facts = merge_shared_cards(facts, shared)
+        calls += 1
+    return {"facts": facts, "tool_calls": calls, "steps": ["facts"]}
 
 
 def _policy(state: InvestigateState) -> dict:
@@ -67,7 +75,11 @@ def _retrieve(state: InvestigateState) -> dict:
 
 def _compose(state: InvestigateState) -> dict:
     return {
-        "answer": compose_answer(state["facts"], documents=state["documents"]),
+        "answer": compose_answer(
+            state["facts"],
+            documents=state["documents"],
+            tool_calls=state.get("tool_calls", 6),
+        ),
         "steps": ["compose"],
     }
 

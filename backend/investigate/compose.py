@@ -165,15 +165,20 @@ def decide_investigation(facts: CaseFacts) -> InvestigationDecision:
 
 
 def compose_answer(
-    facts: CaseFacts, documents: list[Evidence] | None = None
+    facts: CaseFacts,
+    documents: list[Evidence] | None = None,
+    tool_calls: int = 6,
 ) -> Answer:
     decision = decide_investigation(facts)
     docs = documents if documents is not None else retrieve_documents(facts, decision.pattern)
-    return _build_answer(facts, decision, docs)
+    return _build_answer(facts, decision, docs, tool_calls)
 
 
 def _build_answer(
-    facts: CaseFacts, decision: InvestigationDecision, documents: list[Evidence]
+    facts: CaseFacts,
+    decision: InvestigationDecision,
+    documents: list[Evidence],
+    tool_calls: int,
 ) -> Answer:
     pattern = decision.pattern
     graph_p = decision.fraud_probability
@@ -222,7 +227,7 @@ def _build_answer(
         ),
         sar=_sar(facts, filed, verdict, final),
         stop_reason=decision.stop_reason,
-        tool_calls=6,
+        tool_calls=tool_calls,
         tokens=0,
         latency_s=0.0,
     )
@@ -421,6 +426,28 @@ def _evidence(
                 source=EvidenceSource.GRAPH,
                 ref=f"query:closed_cases(card_id={facts.card.card_id})",
                 entity_ids=_closed_ids(facts.closed_cases),
+            )
+        )
+    connected = [card_id for card_id in facts.device_card_ids if card_id != facts.card.card_id]
+    if facts.device_profile_id:
+        if connected:
+            claim = (
+                f"Device {facts.device_profile_id} is also linked to "
+                f"{len(connected)} other card(s): {', '.join(connected)}."
+            )
+            entity_ids = [facts.device_profile_id, *connected]
+        else:
+            claim = (
+                f"Device {facts.device_profile_id} made this purchase; "
+                "shared_cards_on_device found no other payment cards on this profile."
+            )
+            entity_ids = [facts.device_profile_id, facts.card.card_id]
+        items.append(
+            Evidence(
+                claim=claim,
+                source=EvidenceSource.GRAPH,
+                ref=f"query:shared_cards_on_device(d={facts.device_profile_id})",
+                entity_ids=entity_ids,
             )
         )
     if response is CustomerResponse.CONFIRM:

@@ -2,6 +2,7 @@ import pytest
 
 from backend.graph.export import PROCESSED_DIR
 from backend.investigate import load_case_facts
+from backend.investigate.facts import merge_shared_cards
 
 
 pytestmark = pytest.mark.skipif(
@@ -44,3 +45,12 @@ def test_hhg001_flagged_txn_card_and_closed_cases() -> None:
 def test_unknown_case_is_rejected() -> None:
     with pytest.raises(KeyError, match="HHG-999"):
         load_case_facts("HHG-999")
+
+
+def test_merge_shared_cards_unions_cards_from_the_query() -> None:
+    facts = load_case_facts("HHG-014")
+    merged = merge_shared_cards(
+        facts, [{"cards": [{"v_id": "SHARED-CARD", "v_type": "PaymentCard", "attributes": {}}]}]
+    )
+    assert "SHARED-CARD" in merged.device_card_ids
+    assert facts.card.card_id in merged.device_card_ids
