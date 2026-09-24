@@ -1,33 +1,50 @@
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from backend.main import app
 
 
 client = TestClient(app)
+FRONTEND = Path(__file__).resolve().parents[1] / "frontend"
 
 
-def test_analyst_page_is_served() -> None:
+def test_api_root_points_to_next_ui() -> None:
     response = client.get("/")
     assert response.status_code == 200
-    assert "text/html" in response.headers["content-type"]
-    html = response.text
-    assert "TraceGuard" in html
-    assert "/investigate/" in html
-    assert "Evidence requests" in html
-    assert "Connected cards" in html
-    assert "Graph write" in html
-    assert "Neighborhood" in html
-    assert "Timeline" in html
-    assert "Approvals" in html
-    assert "Policy trace" in html
-    assert "Conflicts" in html
-    assert "Approval queue" in html
-    assert "/graph/" in html
-    assert "/monitoring" in html
-    assert "function escapeHtml" in html
-    assert "sarBlock" in html
-    assert "id=\"mode\"" in html
-    assert 'fetch("/health")' in html
+    payload = response.json()
+    assert payload["service"] == "TraceGuard"
+    assert payload["ui"] == "http://127.0.0.1:3000"
+
+
+def test_exam_stats_counts_saved_answers() -> None:
+    response = client.get("/stats")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["exam"] == 20
+    assert payload["fraud"] + payload["legitimate"] + payload["uncertain"] == 20
+    assert payload["sar"] >= 1
+
+
+def test_analyst_console_is_nextjs() -> None:
+    package = (FRONTEND / "package.json").read_text(encoding="utf-8")
+    assert '"next"' in package
+    source = "\n".join(path.read_text(encoding="utf-8") for path in (FRONTEND / "app").rglob("*.tsx"))
+    assert "TraceGuard" in source
+    assert "/investigate/" in source
+    assert "Evidence requests" in source
+    assert "Connected cards" in source
+    assert "Graph write" in source
+    assert "Neighborhood" in source
+    assert "Timeline" in source
+    assert "Approvals" in source
+    assert "Policy trace" in source
+    assert "Conflicts" in source
+    assert "Approval queue" in source
+    assert "/graph/" in source
+    assert "/monitoring" in source
+    assert 'id="mode"' in source or "id=\"mode\"" in source
+    assert '"/health"' in source or "'/health'" in source
 
 
 def test_cases_lists_twenty_exam_ids() -> None:

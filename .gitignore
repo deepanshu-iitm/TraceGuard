@@ -6,6 +6,7 @@ __pycache__/
 .env.*
 !.env.example
 node_modules/
+.next/
 .pytest_cache/
 .mypy_cache/
 dist/

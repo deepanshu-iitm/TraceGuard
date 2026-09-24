@@ -1,20 +1,23 @@
 """TraceGuard FastAPI application."""
 
-from pathlib import Path
-
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api import cases_router, graph_router, investigate_router, monitoring_router
 from backend.config import settings
-
-FRONTEND = Path(__file__).resolve().parents[1] / "frontend" / "index.html"
 
 app = FastAPI(
     title="TraceGuard",
     description="Agentic, graph-native fraud investigation platform powered by TigerGraph.",
     version="0.1.0",
     debug=settings.app_debug,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(cases_router)
@@ -24,8 +27,8 @@ app.include_router(monitoring_router)
 
 
 @app.get("/")
-def analyst_page() -> FileResponse:
-    return FileResponse(FRONTEND)
+def root() -> dict[str, str]:
+    return {"service": "TraceGuard", "ui": "http://127.0.0.1:3000"}
 
 
 @app.get("/health")
