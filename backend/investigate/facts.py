@@ -77,6 +77,8 @@ class CaseFacts:
 
     def prior_in_region(self, region: str | None = None) -> tuple[TxnFact, ...]:
         target = self.flagged.billing_region if region is None else region
+        if not target:
+            return ()
         return tuple(txn for txn in self.prior() if txn.billing_region == target)
 
 

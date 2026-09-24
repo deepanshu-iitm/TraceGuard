@@ -40,6 +40,7 @@ from backend.policy.stopping import StopSnapshot, stop_decision
 from backend.retrieve import retrieve_documents, retrieve_similar_cases
 
 CASES_DIR = Path(__file__).resolve().parents[2] / "cases"
+_ENTITY_CAP = 12
 
 _REASON = {
     "R1": "R1: the alert is a single weak signal; verify before any block",
@@ -291,16 +292,15 @@ def write_answer(case_id: str, out_dir: Path | None = None) -> Path:
 
 
 def write_exam_answers(out_dir: Path | None = None) -> list[Path]:
-    """Rebuild the 20 exam files from local graph facts and live GraphRAG."""
+    """Rebuild the 20 exam files from local graph facts and the LangGraph loop."""
     from backend.data import load_case_pack
-    from backend.investigate.persist import write_investigation_case
+    from backend.investigate.agent import investigate
 
     dest_dir = out_dir or CASES_DIR
     dest_dir.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
     for item in load_case_pack():
-        facts = load_local_case_facts(item.case_id)
-        answer = write_investigation_case(compose_answer(facts))
+        answer = investigate(item.case_id, load_local_case_facts(item.case_id))
         path = dest_dir / f"{item.case_id}.json"
         path.write_text(json.dumps(answer.model_dump(mode="json"), indent=2) + "\n", encoding="utf-8")
         paths.append(path)
@@ -411,7 +411,7 @@ def _evidence(
             ),
             source=EvidenceSource.GRAPH,
             ref=f"query:card_region_history(card_id={facts.card.card_id}, region={flagged.billing_region})",
-            entity_ids=[txn.txn_id for txn in region_prior] + [flagged.txn_id],
+            entity_ids=_cap_ids([txn.txn_id for txn in region_prior] + [flagged.txn_id]),
         ),
     ]
     if facts.closed_cases:
@@ -420,7 +420,7 @@ def _evidence(
                 claim=_closed_claim(facts.closed_cases),
                 source=EvidenceSource.GRAPH,
                 ref=f"query:closed_cases(card_id={facts.card.card_id})",
-                entity_ids=_closed_ids(facts.closed_cases),
+                entity_ids=_cap_ids(_closed_ids(facts.closed_cases)),
             )
         )
     device_connected = [
@@ -432,7 +432,7 @@ def _evidence(
                 f"Device {facts.device_profile_id} is also linked to "
                 f"{len(device_connected)} other card(s): {', '.join(device_connected)}."
             )
-            entity_ids = [facts.device_profile_id, *device_connected]
+            entity_ids = _cap_ids([facts.device_profile_id, *device_connected])
         else:
             claim = (
                 f"Device {facts.device_profile_id} made this purchase; "
@@ -525,7 +525,7 @@ def _evidence(
                 ),
                 source=EvidenceSource.GRAPH,
                 ref=f"query:next_chain(t={facts.flagged.txn_id})",
-                entity_ids=list(affected),
+                entity_ids=_cap_ids(list(affected)),
             )
         )
     if response is CustomerResponse.CONFIRM:
@@ -561,6 +561,19 @@ def _evidence(
         )
     items.extend(documents)
     return items
+
+
+def _cap_ids(ids: list[str]) -> list[str]:
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for entity_id in ids:
+        if not entity_id or entity_id in seen:
+            continue
+        seen.add(entity_id)
+        ordered.append(entity_id)
+        if len(ordered) >= _ENTITY_CAP:
+            break
+    return ordered
 
 
 def _closed_claim(cases: tuple[ClosedCaseFact, ...]) -> str:

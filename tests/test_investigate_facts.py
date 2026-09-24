@@ -42,6 +42,12 @@ def test_hhg001_flagged_txn_card_and_closed_cases() -> None:
     ]
 
 
+def test_prior_in_region_is_empty_without_a_billing_region() -> None:
+    facts = load_case_facts("HHG-011")
+    assert not facts.flagged.billing_region
+    assert facts.prior_in_region() == ()
+
+
 def test_unknown_case_is_rejected() -> None:
     with pytest.raises(KeyError, match="HHG-999"):
         load_case_facts("HHG-999")

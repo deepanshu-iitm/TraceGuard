@@ -31,6 +31,7 @@ from backend.retrieve import retrieve_documents
 class InvestigateState(TypedDict, total=False):
     case_id: str
     facts: CaseFacts
+    lock_facts: bool
     pattern: str
     documents: list[Evidence]
     initial_actions: list[str]
@@ -41,28 +42,39 @@ class InvestigateState(TypedDict, total=False):
     steps: Annotated[list[str], add]
 
 
-def investigate(case_id: str) -> Answer:
+def investigate(case_id: str, facts: CaseFacts | None = None) -> Answer:
     """Run the investigation graph and return the exam answer."""
     started = time.perf_counter()
-    answer = investigate_state(case_id)["answer"]
+    payload: InvestigateState = {"case_id": case_id}
+    if facts is not None:
+        payload["facts"] = facts
+        payload["lock_facts"] = True
+    answer = investigation_graph.invoke(payload)["answer"]
     elapsed = round(time.perf_counter() - started, 2)
     return answer.model_copy(update={"latency_s": elapsed})
 
 
-def investigate_state(case_id: str) -> InvestigateState:
-    return investigation_graph.invoke({"case_id": case_id})
+def investigate_state(case_id: str, facts: CaseFacts | None = None) -> InvestigateState:
+    payload: InvestigateState = {"case_id": case_id}
+    if facts is not None:
+        payload["facts"] = facts
+        payload["lock_facts"] = True
+    return investigation_graph.invoke(payload)
 
 
 def _facts(state: InvestigateState) -> dict:
-    facts = load_case_facts(state["case_id"])
+    facts = state.get("facts") or load_case_facts(state["case_id"])
     tools = get_graph_tools()
     live = bool(settings.tg_host.strip())
-    calls = 1 if live else 0
+    lock = bool(state.get("lock_facts"))
+    calls = 1 if live or lock else 0
     tokens = 0
     selected = _selected_tools(facts)
     extra_tokens = 0
     selected, extra_tokens = _maybe_llm_tools(facts, selected)
     tokens += extra_tokens
+    if lock:
+        return {"facts": facts, "tool_calls": max(len(selected), 1), "tokens": tokens, "steps": ["facts"]}
     for name, params in selected:
         if live and name == "get_case_facts":
             continue
@@ -170,6 +182,7 @@ def _retrieve(state: InvestigateState) -> dict:
     pattern = FraudPattern(state["pattern"])
     return {
         "documents": retrieve_documents(state["facts"], pattern),
+        "tool_calls": int(state.get("tool_calls") or 0) + 1,
         "steps": ["retrieve"],
     }
 

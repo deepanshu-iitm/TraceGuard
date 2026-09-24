@@ -39,6 +39,15 @@ _STOP = frozenset(
     }
 )
 _NOTES: list[CorpusDoc] | None = None
+_POLICY_BY_PATTERN: dict[FraudPattern, frozenset[str]] = {
+    FraudPattern.NONE: frozenset({"policy:R1", "policy:R3", "policy:R7"}),
+    FraudPattern.CARD_TESTING: frozenset({"policy:R5", "policy:R1", "policy:R2"}),
+    FraudPattern.CARD_NOT_PRESENT_FRAUD: frozenset({"policy:R1", "policy:R2", "policy:R4"}),
+    FraudPattern.CARD_NOT_PRESENT_NEW_DEVICE: frozenset({"policy:R1", "policy:R2"}),
+    FraudPattern.OUT_OF_REGION_USE: frozenset({"policy:R1", "policy:R2", "policy:R3"}),
+    FraudPattern.ACCOUNT_TAKEOVER: frozenset({"policy:R2", "policy:R6", "policy:R10"}),
+    FraudPattern.UNDOCUMENTED: frozenset({"policy:R9", "policy:R6", "policy:R8"}),
+}
 
 
 def retrieve_documents(
@@ -53,11 +62,8 @@ def retrieve_documents(
         if hits:
             return hits
     query = _query_tokens(facts, pattern)
-    policy_pool = POLICY_DOCS
-    if pattern is FraudPattern.NONE:
-        policy_pool = tuple(
-            doc for doc in POLICY_DOCS if doc.doc_id in {"policy:R1", "policy:R3", "policy:R7"}
-        )
+    allowed = allowed_policies(pattern)
+    policy_pool = tuple(doc for doc in POLICY_DOCS if doc.doc_id in allowed)
     hits = [
         _as_evidence(doc)
         for doc in (
@@ -139,6 +145,10 @@ def all_corpus_docs(*, full_bank_notes: bool = False) -> list[CorpusDoc]:
     return list(POLICY_DOCS) + list(PATTERN_DOCS) + list(REGULATORY_DOCS) + closed
 
 
+def allowed_policies(pattern: FraudPattern) -> frozenset[str]:
+    return _POLICY_BY_PATTERN.get(pattern, frozenset({"policy:R1"}))
+
+
 def query_text(facts: CaseFacts, pattern: FraudPattern) -> str:
     parts = [
         pattern.value,
@@ -150,6 +160,7 @@ def query_text(facts: CaseFacts, pattern: FraudPattern) -> str:
         "device" if facts.device_profile_id else "",
         "email" if facts.flagged.recipient_email or facts.flagged.purchaser_email else "",
         "sar" if pattern is not FraudPattern.NONE else "signal",
+        *sorted(allowed_policies(pattern)),
     ]
     for case in facts.closed_cases:
         parts.append(case.pattern)

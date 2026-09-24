@@ -14,7 +14,6 @@ from backend.models.evidence import Evidence, EvidenceSource
 
 VECTOR_DIM = 32
 _BATCH = 80
-_NONE_POLICY = frozenset({"policy:R1", "policy:R3", "policy:R7"})
 _ID_PREFIXES = (
     ("policy_", "policy:"),
     ("pattern_", "pattern:"),
@@ -180,7 +179,7 @@ def repair_closed_case_notes() -> int:
 
 def retrieve_from_graph(facts: Any, pattern: FraudPattern, limit: int = 4) -> list[Evidence] | None:
     from backend.graph.tools import get_graph_tools
-    from backend.retrieve.search import query_text
+    from backend.retrieve.search import allowed_policies, query_text
 
     query_vec = embed_text(query_text(facts, pattern))
     try:
@@ -194,10 +193,18 @@ def retrieve_from_graph(facts: Any, pattern: FraudPattern, limit: int = 4) -> li
         return None
     picked: list[Evidence] = []
     seen_kind: set[str] = set()
+    allowed = allowed_policies(pattern)
+    want_pattern = (
+        f"pattern:{pattern.value}"
+        if pattern not in {FraudPattern.NONE, FraudPattern.UNDOCUMENTED}
+        else ""
+    )
     for hit in hits:
         doc_id = doc_id_from_vertex(hit["v_id"])
         kind = str(hit["attributes"].get("kind") or "")
-        if pattern is FraudPattern.NONE and kind == "policy" and doc_id not in _NONE_POLICY:
+        if kind == "policy" and doc_id not in allowed:
+            continue
+        if kind == "pattern" and (not want_pattern or doc_id != want_pattern):
             continue
         if kind in seen_kind:
             continue
