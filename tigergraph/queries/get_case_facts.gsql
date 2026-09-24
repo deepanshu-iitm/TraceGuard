@@ -1,0 +1,30 @@
+USE GRAPH FraudGraph
+
+DROP QUERY get_case_facts
+
+CREATE QUERY get_case_facts(VERTEX<CardTransaction> t) FOR GRAPH FraudGraph {
+  start = {t};
+  cards = SELECT c FROM start:s -(<MADE)- PaymentCard:c;
+  customers = SELECT u FROM cards:c -(<OWNS)- Customer:u;
+  owned = SELECT c FROM customers:u -(OWNS>)- PaymentCard:c;
+  history = SELECT x FROM cards:c -(MADE>)- CardTransaction:x;
+  closed = SELECT cc FROM cards:c -(<ON_CARD)- ClosedCase:cc;
+  devices = SELECT d FROM start:s -(FROM_DEVICE>)- DeviceProfile:d;
+  device_txns = SELECT x FROM devices:d -(<FROM_DEVICE)- CardTransaction:x;
+  device_cards = SELECT c FROM device_txns:x -(<MADE)- PaymentCard:c;
+  purchaser = SELECT e FROM start:s -(PURCHASER_EMAIL>)- EmailDomain:e;
+  recipient = SELECT e FROM start:s -(RECIPIENT_EMAIL>)- EmailDomain:e;
+  regions = SELECT r FROM start:s -(BILLED_IN>)- BillingRegion:r;
+
+  PRINT t;
+  PRINT cards;
+  PRINT customers;
+  PRINT owned;
+  PRINT history;
+  PRINT closed;
+  PRINT devices;
+  PRINT device_cards;
+  PRINT purchaser;
+  PRINT recipient;
+  PRINT regions;
+}

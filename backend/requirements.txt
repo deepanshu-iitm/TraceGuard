@@ -5,3 +5,6 @@ pydantic-settings
 httpx2
 pytest
 langgraph
+pyTigerGraph
+mcp>=1.0.0,<2
+python-dotenv

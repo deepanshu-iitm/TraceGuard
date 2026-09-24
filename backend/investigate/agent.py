@@ -7,6 +7,7 @@ from typing import Annotated, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
+from backend.graph.tools import get_graph_tools
 from backend.investigate.compose import compose_answer, decide_investigation
 from backend.investigate.facts import CaseFacts, load_case_facts
 from backend.models.answer import Answer
@@ -36,7 +37,13 @@ def investigate_state(case_id: str) -> InvestigateState:
 
 
 def _facts(state: InvestigateState) -> dict:
-    return {"facts": load_case_facts(state["case_id"]), "steps": ["facts"]}
+    facts = load_case_facts(state["case_id"])
+    tools = get_graph_tools()
+    tools.run_installed_query("get_case_facts", {"t": facts.flagged.txn_id})
+    tools.run_installed_query("investigate_txn", {"t": facts.flagged.txn_id})
+    if facts.device_profile_id:
+        tools.run_installed_query("shared_cards_on_device", {"d": facts.device_profile_id})
+    return {"facts": facts, "steps": ["facts"]}
 
 
 def _policy(state: InvestigateState) -> dict:
