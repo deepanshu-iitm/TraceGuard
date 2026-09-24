@@ -10,8 +10,15 @@ def test_analyst_page_is_served() -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
-    assert "TraceGuard" in response.text
-    assert "/investigate/" in response.text
+    html = response.text
+    assert "TraceGuard" in html
+    assert "/investigate/" in html
+    assert "Evidence requests" in html
+    assert "Connected cards" in html
+    assert "Graph write" in html
+    assert "function escapeHtml" in html
+    assert "sarBlock" in html
+    assert "@media (max-width: 800px)" in html
 
 
 def test_cases_lists_twenty_exam_ids() -> None:
@@ -36,3 +43,14 @@ def test_saved_answer_unknown_case_returns_404() -> None:
     response = client.get("/cases/HHG-999")
     assert response.status_code == 404
     assert response.json()["detail"] == "unknown case_id: HHG-999"
+
+
+def test_saved_fraud_answer_has_sar_fields_the_page_renders() -> None:
+    response = client.get("/cases/HHG-014")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["case"]["verdict"] == "fraud"
+    assert payload["sar"]["file"] is True
+    assert payload["sar"]["narrative"]
+    assert payload["case"]["written_to_graph"] is True
+    assert payload["case"]["connected_device_profiles"]

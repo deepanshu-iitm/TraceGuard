@@ -19,7 +19,7 @@
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, sans-serif; }
     header {
-      display: flex; align-items: baseline; gap: 12px;
+      display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
       padding: 16px 20px; border-bottom: 1px solid var(--line);
     }
     header h1 { margin: 0; font-size: 18px; letter-spacing: 0.04em; }
@@ -35,7 +35,11 @@
     .case span { color: var(--muted); font-size: 12px; }
     main { overflow: auto; padding: 20px 24px 48px; }
     .empty { color: var(--muted); margin-top: 48px; }
-    .banner { display: flex; gap: 16px; align-items: center; background: var(--panel); border: 1px solid var(--line); padding: 16px; margin-bottom: 16px; }
+    .banner {
+      display: flex; gap: 16px; align-items: flex-start; justify-content: space-between;
+      flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line);
+      padding: 16px; margin-bottom: 16px;
+    }
     .verdict { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
     .verdict.legitimate { color: var(--ok); }
     .verdict.fraud { color: var(--bad); }
@@ -50,6 +54,12 @@
     }
     button.run:disabled { opacity: 0.6; cursor: wait; }
     pre { background: #0b1015; border: 1px solid var(--line); padding: 12px; overflow: auto; font-size: 12px; }
+    details { margin-top: 24px; }
+    details summary { cursor: pointer; color: var(--muted); }
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; height: auto; }
+      aside { max-height: 240px; border-right: 0; border-bottom: 1px solid var(--line); }
+    }
   </style>
 </head>
 <body>
@@ -68,9 +78,47 @@
     const panel = document.getElementById("panel");
     let selected = null;
 
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
     function triggerLabel(item) {
       const score = item.risk_score == null ? "" : ` · ${item.risk_score.toFixed(2)}`;
       return `${item.trigger_type.replaceAll("_", " ")}${score}`;
+    }
+
+    function listOrNone(ids) {
+      if (!ids || !ids.length) return `<p class="source">None.</p>`;
+      return `<ul>${ids.map((id) => `<li>${escapeHtml(id)}</li>`).join("")}</ul>`;
+    }
+
+    function actionList(items) {
+      return items.map((item) =>
+        `<li><strong>${escapeHtml(item.action)}</strong> · ${escapeHtml(item.route)}<div class="source">${escapeHtml(item.reason)}</div></li>`
+      ).join("");
+    }
+
+    function requestList(items) {
+      if (!items.length) return `<p class="source">None.</p>`;
+      return `<ul class="evidence">${items.map((item) =>
+        `<li>${escapeHtml(item.type)} after step ${escapeHtml(item.asked_after_step)}<div class="source">${escapeHtml(item.assumed_response)}</div></li>`
+      ).join("")}</ul>`;
+    }
+
+    function sarBlock(sar) {
+      if (!sar.file) {
+        return `<p class="source">${escapeHtml(sar.reason)}</p>`;
+      }
+      const dates = (sar.activity_dates || []).join(" → ");
+      return `
+        <p>${escapeHtml(sar.reason)}</p>
+        <p>${escapeHtml(sar.narrative)}</p>
+        <p class="source">Subjects: ${escapeHtml((sar.subjects || []).join(", "))} · $${Number(sar.total_amount_usd).toFixed(2)} · ${escapeHtml(dates)}</p>
+      `;
     }
 
     function renderCases(items) {
@@ -78,7 +126,7 @@
       items.forEach((item) => {
         const btn = document.createElement("button");
         btn.className = "case";
-        btn.innerHTML = `<strong>${item.case_id}</strong><span>${triggerLabel(item)} · ${item.customer_id}</span>`;
+        btn.innerHTML = `<strong>${escapeHtml(item.case_id)}</strong><span>${escapeHtml(triggerLabel(item))} · ${escapeHtml(item.customer_id)}</span>`;
         btn.onclick = () => selectCase(item, btn);
         casesEl.appendChild(btn);
       });
@@ -88,8 +136,8 @@
       selected = item;
       [...casesEl.children].forEach((el) => el.classList.remove("active"));
       btn.classList.add("active");
-      panel.innerHTML = `<p>Loading saved answer for ${item.case_id}…</p>`;
-      fetch(`/cases/${item.case_id}`)
+      panel.innerHTML = `<p>Loading saved answer for ${escapeHtml(item.case_id)}…</p>`;
+      fetch(`/cases/${encodeURIComponent(item.case_id)}`)
         .then((res) => {
           if (!res.ok) {
             return res.json().then((err) => {
@@ -101,9 +149,9 @@
         .then((answer) => renderAnswer(answer, "saved"))
         .catch((error) => {
           panel.innerHTML = `
-            <p><strong>${item.case_id}</strong> · card ${item.card_id} · txn ${item.flagged_txn_id}</p>
-            <p>${item.trigger_text}</p>
-            <p class="error">${error.message}</p>
+            <p><strong>${escapeHtml(item.case_id)}</strong> · card ${escapeHtml(item.card_id)} · txn ${escapeHtml(item.flagged_txn_id)}</p>
+            <p>${escapeHtml(item.trigger_text)}</p>
+            <p class="error">${escapeHtml(error.message)}</p>
             <p><button class="run" id="run">Investigate</button></p>
           `;
           document.getElementById("run").onclick = () => runInvestigation(item.case_id);
@@ -117,14 +165,14 @@
         run.textContent = "Investigating…";
       }
       try {
-        const response = await fetch(`/investigate/${caseId}`, { method: "POST" });
+        const response = await fetch(`/investigate/${encodeURIComponent(caseId)}`, { method: "POST" });
         if (!response.ok) {
           const err = await response.json().catch(() => ({ detail: response.statusText }));
           throw new Error(err.detail || `HTTP ${response.status}`);
         }
         renderAnswer(await response.json(), "live");
       } catch (error) {
-        panel.insertAdjacentHTML("beforeend", `<p class="error">${error.message}</p>`);
+        panel.insertAdjacentHTML("beforeend", `<p class="error">${escapeHtml(error.message)}</p>`);
         if (run) {
           run.disabled = false;
           run.textContent = "Investigate";
@@ -132,38 +180,49 @@
       }
     }
 
-    function actionList(items) {
-      return items.map((item) =>
-        `<li><strong>${item.action}</strong> · ${item.route}<div class="source">${item.reason}</div></li>`
-      ).join("");
-    }
-
     function renderAnswer(answer, source) {
       const c = answer.case;
       const sourceLabel = source === "live" ? "Live investigation." : "Saved exam answer.";
+      const graphWrite = c.written_to_graph
+        ? `Written as ${c.graph_case_id}`
+        : "Not written";
       panel.innerHTML = `
         <div class="banner">
           <div>
-            <div class="verdict ${c.verdict}">${c.verdict}</div>
-            <div>${answer.case_id} · ${c.status} · p=${c.fraud_probability.toFixed(2)} · ${c.pattern}</div>
+            <div class="verdict ${escapeHtml(c.verdict)}">${escapeHtml(c.verdict)}</div>
+            <div>${escapeHtml(answer.case_id)} · ${escapeHtml(c.status)} · p=${Number(c.fraud_probability).toFixed(2)} · ${escapeHtml(c.pattern)}</div>
           </div>
-          <div>exposure $${c.exposure_usd.toFixed(2)} · SAR ${answer.sar.file ? "file" : "not filed"}</div>
+          <div>exposure $${Number(c.exposure_usd).toFixed(2)} · SAR ${answer.sar.file ? "file" : "not filed"}</div>
         </div>
-        <p>${c.summary}</p>
-        <p>${answer.stop_reason}</p>
-        <p class="source">${sourceLabel}</p>
+        <p>${escapeHtml(c.summary)}</p>
+        <p>${escapeHtml(answer.stop_reason)}</p>
+        <p class="source">${sourceLabel} · ${escapeHtml(graphWrite)} · ${escapeHtml(answer.tool_calls)} graph hops</p>
         <p><button class="run" id="run">Investigate</button></p>
+        <h2>Connected cards</h2>
+        ${listOrNone(c.connected_card_ids)}
+        <h2>Connected devices</h2>
+        ${listOrNone(c.connected_device_profiles)}
+        <h2>Similar prior cases</h2>
+        ${listOrNone(c.similar_prior_cases)}
+        <h2>Evidence requests</h2>
+        ${requestList(answer.evidence_requests || [])}
         <h2>Initial actions</h2>
         <ul class="actions">${actionList(answer.next_best_actions.initial)}</ul>
         <h2>Final actions</h2>
         <ul class="actions">${actionList(answer.next_best_actions.final)}</ul>
-        <p class="source">${answer.next_best_actions.what_changed}</p>
+        <p class="source">${escapeHtml(answer.next_best_actions.what_changed)}</p>
         <h2>Evidence</h2>
         <ul class="evidence">${c.evidence.map((item) =>
-          `<li>${item.claim}<div class="source">${item.source} · ${item.ref}</div></li>`
+          `<li>${escapeHtml(item.claim)}<div class="source">${escapeHtml(item.source)} · ${escapeHtml(item.ref)}</div></li>`
         ).join("")}</ul>
-        <h2>Raw JSON</h2>
-        <pre>${JSON.stringify(answer, null, 2)}</pre>
+        <h2>SAR</h2>
+        ${sarBlock(answer.sar)}
+        <h2>Graph write</h2>
+        <p class="source">${escapeHtml(graphWrite)} · ${escapeHtml(answer.tool_calls)} hops · ${escapeHtml(answer.tokens)} tokens · ${escapeHtml(answer.latency_s)}s</p>
+        <details>
+          <summary>Raw JSON</summary>
+          <pre>${escapeHtml(JSON.stringify(answer, null, 2))}</pre>
+        </details>
       `;
       document.getElementById("run").onclick = () => runInvestigation(answer.case_id);
     }
@@ -171,7 +230,7 @@
     fetch("/cases")
       .then((res) => res.json())
       .then(renderCases)
-      .catch((error) => { panel.innerHTML = `<p class="error">${error.message}</p>`; });
+      .catch((error) => { panel.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`; });
   </script>
 </body>
 </html>
