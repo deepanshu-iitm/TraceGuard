@@ -234,6 +234,23 @@
               </li>`).join("") || "<li class='source'>No history loaded.</li>"}</ul>
           </div>
         </div>
+        <h2>Policy trace</h2>
+        <ul class="actions">${(graph && graph.policy_trace || []).map((item) =>
+          `<li><span class="route ${escapeHtml(String(item.route).toLowerCase())}">${escapeHtml(item.stage)} · ${escapeHtml(item.route)}</span> <strong>${escapeHtml(item.action)}</strong><div class="source">${escapeHtml(item.reason)}</div></li>`
+        ).join("") || "<li class='source'>None.</li>"}</ul>
+        <h2>Conflicts</h2>
+        <p class="source">Supports fraud</p>
+        <ul class="evidence">${((graph && graph.conflicts && graph.conflicts.supports_fraud) || []).map((item) =>
+          `<li>${escapeHtml(item)}</li>`
+        ).join("") || "<li class='source'>None.</li>"}</ul>
+        <p class="source">Supports legitimate</p>
+        <ul class="evidence">${((graph && graph.conflicts && graph.conflicts.supports_legitimate) || []).map((item) =>
+          `<li>${escapeHtml(item)}</li>`
+        ).join("") || "<li class='source'>None.</li>"}</ul>
+        <h2>Approval queue</h2>
+        <ul class="actions">${((graph && graph.queue) || approvals).map((item) =>
+          `<li><span class="route ${escapeHtml(String(item.route).toLowerCase())}">${escapeHtml(item.route)}</span> <strong>${escapeHtml(item.action)}</strong><div class="source">${escapeHtml(item.status || item.reason)}</div></li>`
+        ).join("")}</ul>
         <h2>Approvals</h2>
         <ul class="actions">${approvals.map((item) =>
           `<li><span class="route ${escapeHtml(String(item.route).toLowerCase())}">${escapeHtml(item.route)}</span> <strong>${escapeHtml(item.action)}</strong><div class="source">${escapeHtml(item.reason)}</div></li>`
