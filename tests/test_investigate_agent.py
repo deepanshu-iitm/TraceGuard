@@ -22,7 +22,7 @@ def test_agent_runs_facts_policy_retrieve_compose_for_hhg001() -> None:
         tool_calls=state["answer"].tool_calls,
     )
 
-    assert state["steps"] == ["facts", "policy", "retrieve", "compose", "explain"]
+    assert state["steps"] == ["facts", "policy", "retrieve", "compose", "explain", "persist"]
     assert state["answer"] == composed
     assert investigate("HHG-001") == composed
     assert state["answer"].tool_calls >= 2

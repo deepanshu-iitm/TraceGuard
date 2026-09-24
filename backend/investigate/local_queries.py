@@ -22,6 +22,14 @@ class LocalGraphTools:
             return [{"c": [{"v_id": str(params.get("c", "")), "attributes": {}}]}]
         raise KeyError(f"unknown installed query: {name}")
 
+    def upsert_investigation_case(
+        self,
+        case_id: str,
+        attributes: dict[str, Any],
+        edges: list[tuple[str, str, str]],
+    ) -> None:
+        return None
+
 
 def local_case_facts(txn_id: str) -> list[dict[str, Any]]:
     index = _graph_index(PROCESSED_DIR)

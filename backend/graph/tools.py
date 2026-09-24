@@ -11,6 +11,14 @@ class GraphTools(Protocol):
     def run_installed_query(self, name: str, params: dict[str, Any]) -> list[dict[str, Any]]:
         """Run an installed GSQL query. Same contract as tigergraph__run_installed_query."""
 
+    def upsert_investigation_case(
+        self,
+        case_id: str,
+        attributes: dict[str, Any],
+        edges: list[tuple[str, str, str]],
+    ) -> None:
+        """Write an InvestigationCase vertex and its CASE_* edges."""
+
 
 def get_graph_tools() -> GraphTools:
     if settings.tg_host.strip():
@@ -29,6 +37,23 @@ class TigerGraphTools:
         if not isinstance(result, list):
             raise TypeError(f"{name} returned {type(result).__name__}, expected a list")
         return result
+
+    def upsert_investigation_case(
+        self,
+        case_id: str,
+        attributes: dict[str, Any],
+        edges: list[tuple[str, str, str]],
+    ) -> None:
+        conn = _connection()
+        conn.upsertVertex("InvestigationCase", case_id, attributes=attributes)
+        for edge_type, target_type, target_id in edges:
+            conn.upsertEdge(
+                "InvestigationCase",
+                case_id,
+                edge_type,
+                target_type,
+                target_id,
+            )
 
 
 def _connection():
