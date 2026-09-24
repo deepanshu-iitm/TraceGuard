@@ -2,8 +2,6 @@
 venv/
 __pycache__/
 *.py[cod]
-.env
-.env.*
 !.env.example
 node_modules/
 .next/
@@ -17,3 +15,4 @@ data/identity.csv
 data/closed_cases_history.csv
 data/raw/*.csv
 data/processed/*.csv
+config.bat

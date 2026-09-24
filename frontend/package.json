@@ -2,9 +2,9 @@
   "name": "traceguard-console",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
-    "build": "next build",
-    "start": "next start --port 3000"
+    "dev": "node init && next dev --port 3000",
+    "build": "node init && next build",
+    "start": "node init && next start --port 3000"
   },
   "dependencies": {
     "next": "^15.5.4",
