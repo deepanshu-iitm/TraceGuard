@@ -149,32 +149,51 @@ def upsert_rag_documents() -> int:
 
 
 def repair_closed_case_notes() -> int:
-    """Write full analyst_notes onto existing ClosedCase vertices."""
+    """Write every closed-case history row onto ClosedCase vertices."""
     if not settings.tg_host.strip():
         raise RuntimeError("TG_HOST is empty")
-    from backend.graph.export import PROCESSED_DIR, RAW_DIR
-    from backend.graph.tools import _connection
-    from backend.retrieve.search import _load_closed_notes
+    from backend.mcp.client import add_nodes
 
-    existing = {doc.entity_ids[0] for doc in _load_closed_notes(PROCESSED_DIR / "vertices_closed_case.csv") if doc.entity_ids}
-    full = {
-        doc.entity_ids[0]: doc.text[:8000]
-        for doc in _load_closed_notes(RAW_DIR / "closed_cases_history.csv")
-        if doc.entity_ids
-    }
-    rows = [(case_id, {"analyst_notes": full[case_id]}) for case_id in existing if case_id in full]
-    conn = _connection()
+    rows = _closed_case_vertices()
     written = 0
     for start in range(0, len(rows), _BATCH):
         batch = rows[start : start + _BATCH]
-        try:
-            conn.upsertVertices("ClosedCase", batch)
-            written += len(batch)
-        except Exception:
-            for case_id, attrs in batch:
-                conn.upsertVertex("ClosedCase", case_id, attrs)
-                written += 1
+        add_nodes(
+            "ClosedCase",
+            [{key: value for key, value in row.items() if key != "card_id"} for row in batch],
+        )
+        written += len(batch)
     return written
+
+
+def _closed_case_vertices() -> list[dict[str, Any]]:
+    import csv
+
+    from backend.graph.export import RAW_DIR
+
+    path = RAW_DIR / "closed_cases_history.csv"
+    rows: list[dict[str, Any]] = []
+    with path.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            vid = (row.get("case_id") or "").strip()
+            if not vid:
+                continue
+            rows.append(
+                {
+                    "id": vid,
+                    "card_id": (row.get("card_id") or "").strip(),
+                    "opened_at": row.get("opened_at") or "",
+                    "closed_at": row.get("closed_at") or "",
+                    "outcome": row.get("outcome") or "",
+                    "pattern": row.get("pattern") or "",
+                    "exposure_usd": float(row.get("exposure_usd") or 0),
+                    "n_txns": int(float(row.get("n_txns") or 0)),
+                    "report_filed": str(row.get("report_filed") or "").strip().lower()
+                    in {"true", "1", "yes"},
+                    "analyst_notes": (row.get("analyst_notes") or "")[:8000],
+                }
+            )
+    return rows
 
 
 def retrieve_from_graph(facts: Any, pattern: FraudPattern, limit: int = 4) -> list[Evidence] | None:

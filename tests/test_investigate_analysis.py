@@ -80,6 +80,47 @@ def test_card_testing_detector_matches_the_one_hour_signature() -> None:
     assert cleared is True
 
 
+def test_undocumented_pattern_is_used_for_a_tight_email_cluster() -> None:
+    from datetime import datetime
+
+    from backend.investigate.analysis import detect_pattern
+    from backend.investigate.facts import CardFact, CaseFacts, TxnFact
+    from backend.models.case_pack import CasePackItem
+    from backend.models.enums import TriggerType
+
+    flagged = TxnFact(
+        txn_id="9",
+        ts="2016-12-04 12:00:00",
+        amount=88.0,
+        product_cd="C",
+        channel="online",
+        risk_score=0.4,
+        billing_region="12.0",
+        billing_country="87.0",
+        purchaser_email="rare.test",
+    )
+    facts = CaseFacts(
+        case=CasePackItem(
+            case_id="HHG-098",
+            opened_at=datetime(2016, 12, 4),
+            trigger_type=TriggerType.RISK_SCORE,
+            trigger_text="score",
+            flagged_txn_id="9",
+            card_id="C1",
+            customer_id="U1",
+        ),
+        flagged=flagged,
+        card=CardFact(card_id="C1", card1="", network="visa", card_type="debit"),
+        customer_card_ids=("C1",),
+        history=(flagged,),
+        closed_cases=(),
+        device_profile_id="",
+        device_card_ids=("C1",),
+        email_card_ids=("C1", "C2", "C3"),
+    )
+    assert detect_pattern(facts) is FraudPattern.UNDOCUMENTED
+
+
 def test_similar_prior_cases_mix_card_memory_and_notes() -> None:
     from backend.investigate import compose_answer, load_case_facts
 

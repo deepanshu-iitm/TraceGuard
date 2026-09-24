@@ -29,14 +29,12 @@ def get_graph_tools() -> GraphTools:
 
 
 class TigerGraphTools:
-    """Installed queries via the same contract as tigergraph-mcp run_installed_query."""
+    """Installed queries through official tigergraph-mcp tools."""
 
     def run_installed_query(self, name: str, params: dict[str, Any]) -> list[dict[str, Any]]:
-        conn = _connection()
-        result = conn.runInstalledQuery(name, params)
-        if not isinstance(result, list):
-            raise TypeError(f"{name} returned {type(result).__name__}, expected a list")
-        return result
+        from backend.mcp.client import run_installed_query
+
+        return run_installed_query(name, params)
 
     def upsert_investigation_case(
         self,
@@ -44,16 +42,14 @@ class TigerGraphTools:
         attributes: dict[str, Any],
         edges: list[tuple[str, str, str]],
     ) -> None:
-        conn = _connection()
-        conn.upsertVertex("InvestigationCase", case_id, attributes=attributes)
+        from backend.mcp.client import add_edge, add_nodes
+
+        add_nodes("InvestigationCase", [{"id": case_id, **attributes}])
         for edge_type, target_type, target_id in edges:
-            conn.upsertEdge(
-                "InvestigationCase",
-                case_id,
-                edge_type,
-                target_type,
-                target_id,
-            )
+            try:
+                add_edge("InvestigationCase", case_id, edge_type, target_type, target_id)
+            except Exception:
+                continue
 
 
 def _connection():

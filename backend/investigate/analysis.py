@@ -127,14 +127,14 @@ def detect_pattern(facts: CaseFacts) -> FraudPattern:
         return FraudPattern.CARD_TESTING
     if account_takeover(facts):
         return FraudPattern.ACCOUNT_TAKEOVER
-    if shared_origin(facts) and facts.flagged.channel == "online":
-        if new_device(facts):
-            return FraudPattern.CARD_NOT_PRESENT_NEW_DEVICE
-        return FraudPattern.CARD_NOT_PRESENT_FRAUD
+    if shared_origin(facts) and facts.flagged.channel == "online" and new_device(facts):
+        return FraudPattern.CARD_NOT_PRESENT_NEW_DEVICE
     if known_spend(facts):
         return FraudPattern.NONE
     if undocumented_coordinated(facts):
         return FraudPattern.UNDOCUMENTED
+    if shared_origin(facts) and facts.flagged.channel == "online":
+        return FraudPattern.CARD_NOT_PRESENT_FRAUD
     if facts.flagged.channel == "online" and new_device(facts):
         return FraudPattern.CARD_NOT_PRESENT_NEW_DEVICE
     if facts.flagged.channel == "in_person" and not facts.prior_in_region():

@@ -54,21 +54,25 @@ def persist_investigation_cases(
     return dest
 
 
-def write_investigation_case(answer: Answer, out_dir: Path | None = None) -> Answer:
+def write_investigation_case(
+    answer: Answer,
+    out_dir: Path | None = None,
+    item: CasePackItem | None = None,
+) -> Answer:
     """Upsert one finished investigation onto the local CSVs and, if configured, Savanna."""
 
     dest = out_dir or PROCESSED_DIR
     dest.mkdir(parents=True, exist_ok=True)
-    pack = {item.case_id: item for item in load_case_pack()}
-    item = pack[answer.case_id]
-    _upsert_case_files(answer, item, dest)
+    pack = {row.case_id: row for row in load_case_pack()}
+    resolved = item or pack[answer.case_id]
+    _upsert_case_files(answer, resolved, dest)
     if settings.tg_host.strip():
         from backend.graph.tools import get_graph_tools
 
         get_graph_tools().upsert_investigation_case(
             answer.case_id,
             case_vertex_attrs(answer),
-            case_graph_edges(answer, item),
+            case_graph_edges(answer, resolved),
         )
     case = answer.case.model_copy(
         update={"written_to_graph": True, "graph_case_id": answer.case_id}

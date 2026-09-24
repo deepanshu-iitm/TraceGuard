@@ -99,6 +99,36 @@ def load_local_case_facts(case_id: str, processed_dir: Path | None = None) -> Ca
     return _facts_from_csv(_case_pack_item(case_id), processed_dir or PROCESSED_DIR)
 
 
+def load_alert_facts(
+    case_id: str, txn_id: str, processed_dir: Path | None = None
+) -> CaseFacts:
+    """Build investigation facts for a monitored transaction that is not in the exam pack."""
+    from datetime import datetime
+
+    from backend.models.enums import TriggerType
+
+    dest = processed_dir or PROCESSED_DIR
+    index = _graph_index(dest)
+    flagged = index.txn(txn_id)
+    card_id = index.card_for_txn(txn_id)
+    customer_id = index.customer_for_card(card_id)
+    opened = flagged.ts.replace(" ", "T")
+    item = CasePackItem(
+        case_id=case_id,
+        opened_at=datetime.fromisoformat(opened),
+        trigger_type=TriggerType.RISK_SCORE,
+        trigger_text=(
+            f"Autonomous monitor scored transaction {txn_id} "
+            f"(${flagged.amount:.2f}, {flagged.channel}) at {flagged.risk_score:.2f}."
+        ),
+        flagged_txn_id=txn_id,
+        card_id=card_id,
+        customer_id=customer_id or "UNKNOWN",
+        risk_score=flagged.risk_score,
+    )
+    return _facts_from_csv(item, dest)
+
+
 def _facts_from_csv(item: CasePackItem, processed_dir: Path) -> CaseFacts:
     index = _graph_index(processed_dir)
     flagged = index.txn(item.flagged_txn_id)
