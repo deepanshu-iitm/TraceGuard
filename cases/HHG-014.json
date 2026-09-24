@@ -7,14 +7,16 @@
     "pattern": "card_not_present_fraud",
     "pattern_description": "",
     "affected_txn_ids": [
-      "3478561"
+      "3477218",
+      "3478561",
+      "3478886"
     ],
-    "first_suspicious_txn_id": "3478561",
+    "first_suspicious_txn_id": "3477218",
     "connected_card_ids": [],
     "connected_device_profiles": [
       "SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080"
     ],
-    "exposure_usd": 74.96,
+    "exposure_usd": 142.0,
     "evidence": [
       {
         "claim": "Flagged transaction 3478561 is a 74.96 USD online product-C purchase in billing region 191.0 on 2016-11-22 16:11:00. Card C13487-K1 is a mastercard debit owned by C13487.",
@@ -71,28 +73,69 @@
         ]
       },
       {
+        "claim": "Device SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080 made this purchase; shared_cards_on_device found no other payment cards on this profile.",
+        "source": "graph",
+        "ref": "query:shared_cards_on_device(d=SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080)",
+        "entity_ids": [
+          "SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080",
+          "C13487-K1"
+        ]
+      },
+      {
+        "claim": "Email domain gmail.com is present on the flagged purchase; email_fanout found 26 other cards, treated as too common for R6.",
+        "source": "graph",
+        "ref": "query:email_fanout(e=gmail.com)",
+        "entity_ids": [
+          "C13487-K1"
+        ]
+      },
+      {
+        "claim": "Billing region 191.0 appears on 8 other cards in the local 1-hop fan-out. Region sharing is recorded, not treated as proof of a shared origin.",
+        "source": "graph",
+        "ref": "query:region_fanout(r=191.0)",
+        "entity_ids": [
+          "C13487-K1"
+        ]
+      },
+      {
+        "claim": "Episode reconstruction grouped 3 transactions around 3478561 using history, device, amount outliers, and NEXT edges 3477218, 3478886.",
+        "source": "graph",
+        "ref": "query:next_chain(t=3478561)",
+        "entity_ids": [
+          "3477218",
+          "3478561",
+          "3478886"
+        ]
+      },
+      {
         "claim": "R2 Customer denies: When the customer denies the transaction, recommend BLOCK_CARD and CREATE_CASE. Add FILE_REPORT when exposure exceeds 1000 USD, a shared device is present, or another card's fraud is connected.",
         "source": "document",
         "ref": "document:policy:R2",
         "entity_ids": []
       },
       {
-        "claim": "Card-not-present new device: Same as card-not-present fraud, but the identity record shows a device not previously seen on this account. Stronger evidence, not proof: legitimate customers also use new devices.",
+        "claim": "Card-not-present fraud: Online activity inconsistent with the cardholder's normal merchants, amounts, or product codes. A burst of a few transactions within 48 hours is common.",
         "source": "document",
-        "ref": "document:pattern:card_not_present_new_device",
+        "ref": "document:pattern:card_not_present_fraud",
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-0031: Case CC-0031: cardholder C11923 reported unrecognized activity on card C11923-K2. 1 transaction(s) between 2016-07-02 and 2016-07-02 totaling $20.36 were confirmed fraudulent. Online purchases from a device not previously seen on this account, inconsistent with the cardholder's history. Online transactions came from a Trident/7.0 on ie 11.0 for desktop. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-1925: Case CC-1925: cardholder C13171 reported unrecognized activity on card C13171-K2. 3 transaction(s) between 2016-08-08 and 2016-08-08 totaling $120.30 were confirmed fraudulent. Online purchases inconsistent with the cardholder's usual merchants and amounts. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "document:closed_case/CC-0031",
+        "ref": "document:closed_case/CC-1925",
         "entity_ids": [
-          "CC-0031"
+          "CC-1925"
         ]
+      },
+      {
+        "claim": "FFIEC authentication guidance: FFIEC guidance expects layered authentication. A new device or credential change on an online purchase is a reason to step up authentication, not automatic proof of fraud.",
+        "source": "document",
+        "ref": "document:reg:ffiec-auth",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [],
-    "summary": "HHG-014 is a analyst_request alert on a 74.96 USD online purchase in billing region 191.0. Graph history shows 36 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.80. Verdict is fraud.",
+    "summary": "HHG-014 is a analyst_request alert on a 74.96 USD online purchase in billing region 191.0. Graph history shows 36 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.80. Episode size 3; exposure 142.00 USD. Verdict is fraud.",
     "written_to_graph": true,
     "graph_case_id": "HHG-014"
   },
@@ -137,14 +180,14 @@
   "sar": {
     "file": true,
     "reason": "R6: shared origin or high-exposure confirmed activity",
-    "narrative": "On 2016-11-22, card C13487-K1 belonging to customer C13487 was used for a 74.96 USD online transaction 3478561 in billing region 191.0, country 87.0. The product code was C. Graph neighborhood review found this activity inconsistent with the cardholder's established pattern or linked it to a shared origin. The investigation treated the purchase as unauthorized. Connected cards on the same device profile, if any, are recommended for monitoring. The flagged card is recommended for restriction pending reissue. Total unauthorized amount: 74.96 USD. This report is filed so a regulator can review the episode on its own.",
+    "narrative": "On 2016-11-21, card C13487-K1 belonging to customer C13487 was used for a 74.96 USD online transaction 3478561 in billing region 191.0, country 87.0. The product code was C. Episode reconstruction identified 3 related transaction(s) totaling 142.00 USD from 2016-11-21 to 2016-11-22. Graph neighborhood review found this activity inconsistent with the cardholder's established pattern or linked it to a shared origin, email cluster, or mixed-channel takeover.  The investigation treated the purchase as unauthorized. Connected cards recommended for monitoring: none beyond the flagged card. The flagged card is recommended for restriction pending reissue. Total unauthorized amount: 142.00 USD. This report is filed so a regulator can review the episode on its own.",
     "subjects": [
       "C13487",
       "C13487-K1"
     ],
-    "total_amount_usd": 74.96,
+    "total_amount_usd": 142.0,
     "activity_dates": [
-      "2016-11-22",
+      "2016-11-21",
       "2016-11-22"
     ]
   },

@@ -37,6 +37,12 @@ POLICY_DOCS: tuple[CorpusDoc, ...] = (
         "When the customer confirms the transaction, recommend CLOSE_NO_FRAUD and record the confirmation.",
     ),
     CorpusDoc(
+        "policy:R4",
+        "R4 No customer reply",
+        "If the customer does not reply, MONITOR_CARD and DECLINE_TRANSACTION for pending "
+        "authorizations. Escalate to an analyst when exposure exceeds 500 USD.",
+    ),
+    CorpusDoc(
         "policy:R5",
         "R5 Card testing",
         "Three or more small online authorizations within one hour followed by a larger purchase: "
@@ -59,6 +65,13 @@ POLICY_DOCS: tuple[CorpusDoc, ...] = (
         "policy:R8",
         "R8 Uncertain and exposed",
         "If the case is uncertain with exposure above 500 USD, or evidence conflicts, ESCALATE_TO_ANALYST.",
+    ),
+    CorpusDoc(
+        "policy:R9",
+        "R9 Coordinated undocumented abuse",
+        "When graph expansion finds coordinated activity that does not match a named pattern, "
+        "CREATE_CASE, FILE_REPORT, and ESCALATE_TO_ANALYST. Describe how the pattern was discovered.",
+        pattern=FraudPattern.UNDOCUMENTED.value,
     ),
     CorpusDoc(
         "policy:R10",
@@ -103,5 +116,41 @@ PATTERN_DOCS: tuple[CorpusDoc, ...] = (
         "Mixed-channel behavior inconsistent with the cardholder, often with device and match-flag "
         "anomalies. Stolen credentials, not only a stolen card number.",
         pattern=FraudPattern.ACCOUNT_TAKEOVER.value,
+    ),
+    CorpusDoc(
+        "pattern:undocumented",
+        "Undocumented coordinated activity",
+        "A tight cluster of cards sharing a rare email domain or other origin, without matching "
+        "card testing, new-device CNP, out-of-region use, or account takeover. Cite the graph hop "
+        "that found it.",
+        pattern=FraudPattern.UNDOCUMENTED.value,
+    ),
+)
+
+REGULATORY_DOCS: tuple[CorpusDoc, ...] = (
+    CorpusDoc(
+        "reg:fincen-sar",
+        "FinCEN suspicious activity report",
+        "A SAR narrative should identify the subject, the dates, the amount, the account or card, "
+        "and why the activity is suspicious, written so a regulator can review the episode without "
+        "the rest of the case file. Do not file when the customer confirmed a legitimate purchase.",
+    ),
+    CorpusDoc(
+        "reg:fatf-r10",
+        "FATF customer due diligence",
+        "Financial Action Task Force Recommendation 10 requires ongoing due diligence. A weak "
+        "single alert is not by itself a reason to block; verify identity and activity first.",
+    ),
+    CorpusDoc(
+        "reg:ffiec-auth",
+        "FFIEC authentication guidance",
+        "FFIEC guidance expects layered authentication. A new device or credential change on an "
+        "online purchase is a reason to step up authentication, not automatic proof of fraud.",
+    ),
+    CorpusDoc(
+        "reg:ofac-screening",
+        "OFAC screening context",
+        "OFAC screening is separate from fraud typology. Graph investigation of device, email, and "
+        "region neighbors does not replace sanctions screening and should not be described as OFAC.",
     ),
 )

@@ -1,16 +1,18 @@
-"""Retrieve policy, pattern, and closed-case text for an investigation."""
+"""Retrieve policy, pattern, closed-case, and regulatory text for an investigation."""
 
 from __future__ import annotations
 
 import csv
+import math
 import re
+from collections import Counter
 from pathlib import Path
 
 from backend.graph.export import PROCESSED_DIR
 from backend.investigate.facts import CaseFacts
 from backend.models.enums import FraudPattern
 from backend.models.evidence import Evidence, EvidenceSource
-from backend.retrieve.corpus import PATTERN_DOCS, POLICY_DOCS, CorpusDoc
+from backend.retrieve.corpus import PATTERN_DOCS, POLICY_DOCS, REGULATORY_DOCS, CorpusDoc
 
 _TOKEN = re.compile(r"[a-z0-9]+")
 _STOP = frozenset(
@@ -40,7 +42,7 @@ _NOTES: list[CorpusDoc] | None = None
 
 
 def retrieve_documents(
-    facts: CaseFacts, pattern: FraudPattern, limit: int = 3
+    facts: CaseFacts, pattern: FraudPattern, limit: int = 4
 ) -> list[Evidence]:
     query = _query_tokens(facts, pattern)
     policy_pool = POLICY_DOCS
@@ -51,17 +53,26 @@ def retrieve_documents(
     hits = [
         _as_evidence(doc)
         for doc in (
-            _best(query, policy_pool),
-            _best(query, PATTERN_DOCS),
-            _best(query, _closed_case_docs()),
+            _best(query, policy_pool, pattern),
+            _best(query, PATTERN_DOCS, pattern),
+            _best(query, _closed_case_docs(), pattern),
+            _best(query, REGULATORY_DOCS, pattern),
         )
         if doc is not None
     ]
     return hits[:limit]
 
 
-def _best(query: set[str], docs: tuple[CorpusDoc, ...] | list[CorpusDoc]) -> CorpusDoc | None:
-    ranked = sorted(((_score(query, doc), doc) for doc in docs), key=lambda pair: pair[0], reverse=True)
+def _best(
+    query: set[str],
+    docs: tuple[CorpusDoc, ...] | list[CorpusDoc],
+    pattern: FraudPattern,
+) -> CorpusDoc | None:
+    ranked = sorted(
+        ((_score(query, doc, pattern), doc) for doc in docs),
+        key=lambda pair: pair[0],
+        reverse=True,
+    )
     if not ranked or ranked[0][0] <= 0:
         return None
     return ranked[0][1]
@@ -111,6 +122,10 @@ def _query_tokens(facts: CaseFacts, pattern: FraudPattern) -> set[str]:
         facts.flagged.product_cd,
         facts.case.trigger_type.value,
         facts.flagged.billing_region or "",
+        "verify" if pattern is FraudPattern.NONE else "fraud",
+        "device" if facts.device_profile_id else "",
+        "email" if facts.flagged.recipient_email or facts.flagged.purchaser_email else "",
+        "sar" if pattern is not FraudPattern.NONE else "signal",
     ]
     for case in facts.closed_cases:
         parts.append(case.pattern)
@@ -121,12 +136,21 @@ def _query_tokens(facts: CaseFacts, pattern: FraudPattern) -> set[str]:
     return _tokens(" ".join(parts))
 
 
-def _score(query: set[str], doc: CorpusDoc) -> int:
-    text_tokens = _tokens(f"{doc.title} {doc.text} {doc.pattern}")
-    overlap = len(query & text_tokens)
-    if doc.pattern and doc.pattern in query:
-        overlap += 3
-    return overlap
+def _score(query: set[str], doc: CorpusDoc, pattern: FraudPattern) -> float:
+    doc_tokens = _tokens(f"{doc.title} {doc.text} {doc.pattern}")
+    if not doc_tokens:
+        return 0.0
+    overlap = query & doc_tokens
+    tf = sum(1.0 for token in overlap)
+    idf = math.log(1.0 + len(doc_tokens))
+    score = tf / math.sqrt(len(doc_tokens)) * idf
+    if doc.pattern and doc.pattern == pattern.value:
+        score += 4.0
+    elif doc.pattern and doc.pattern in query:
+        score += 2.0
+    counts = Counter(doc_tokens)
+    weighted = sum((1.0 + math.log(counts[token])) for token in overlap)
+    return score + 0.15 * weighted
 
 
 def _tokens(text: str) -> set[str]:

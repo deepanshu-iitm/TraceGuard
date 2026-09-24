@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.12,
+    "fraud_probability": 0.07,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -13,7 +13,7 @@
     "exposure_usd": 0.0,
     "evidence": [
       {
-        "claim": "Flagged transaction 3514030 is a 77.07 USD in-person product-W purchase in billing region 444.0 (country 87.0) on 2016-12-04 19:55:28. Card C12382-K1 is a visa debit owned by C12382; the customer has no second card and this channel is in_person, so there is no device profile.",
+        "claim": "Flagged transaction 3514030 is a 77.07 USD in_person product-W purchase in billing region 444.0 on 2016-12-04 19:55:28. Card C12382-K1 is a visa debit owned by C12382.",
         "source": "graph",
         "ref": "query:investigate_txn(t=3514030)",
         "entity_ids": [
@@ -23,7 +23,7 @@
         ]
       },
       {
-        "claim": "Region 444.0 is not new for this card. Ten in-person purchases in 444.0 occurred before the alert, from 2016-09-13 through 2016-11-26, including two recent amounts of 76.94 and 77.08 USD that match the flagged 77.07 USD.",
+        "claim": "Region 444.0 has 10 prior purchases on this card before the alert.",
         "source": "graph",
         "ref": "query:card_region_history(card_id=C12382-K1, region=444.0)",
         "entity_ids": [
@@ -41,7 +41,7 @@
         ]
       },
       {
-        "claim": "Closed cases on this card are a different pattern: CC-1066, CC-2964, and CC-3587 were card-present fraud in region 205.0, and CC-1673 was an online iOS new-device purchase. The flagged transaction does not match those episodes.",
+        "claim": "Closed cases on this card: CC-1066 (confirmed_fraud, out_of_region_use); CC-1673 (confirmed_fraud, card_not_present_new_device); CC-2964 (confirmed_fraud, out_of_region_use); CC-3587 (confirmed_fraud, out_of_region_use).",
         "source": "graph",
         "ref": "query:closed_cases(card_id=C12382-K1)",
         "entity_ids": [
@@ -50,13 +50,25 @@
           "CC-2964",
           "CC-3587",
           "3090135",
+          "3090135",
+          "3140508",
           "3140508",
           "3226855",
+          "3226855",
+          "3271314",
           "3271314"
         ]
       },
       {
-        "claim": "Customer confirmed they made the 77.07 USD in-person purchase in billing region 444.0 and still have the card.",
+        "claim": "Billing region 444.0 appears on 5 other cards in the local 1-hop fan-out. Region sharing is recorded, not treated as proof of a shared origin.",
+        "source": "graph",
+        "ref": "query:region_fanout(r=444.0)",
+        "entity_ids": [
+          "C12382-K1"
+        ]
+      },
+      {
+        "claim": "Customer confirmed they made the 77.07 USD in_person purchase in billing region 444.0 and still have the card.",
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
@@ -80,6 +92,12 @@
         "entity_ids": [
           "CC-4743"
         ]
+      },
+      {
+        "claim": "FFIEC authentication guidance: FFIEC guidance expects layered authentication. A new device or credential change on an online purchase is a reason to step up authentication, not automatic proof of fraud.",
+        "source": "document",
+        "ref": "document:reg:ffiec-auth",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
@@ -88,7 +106,7 @@
       "CC-2964",
       "CC-3587"
     ],
-    "summary": "HHG-001 is a risk-score alert on a 77.07 USD in-person purchase in billing region 444.0, a region this visa debit has used ten times since September, at amounts that already cluster around 59 then 77 USD. Four prior confirmed-fraud cases on the same card were out-of-region use in 205.0 or a new iOS device, not this spend. The customer confirmed the purchase. The model score of 0.61 was the only fraud signal and does not hold.",
+    "summary": "HHG-001 is a risk_score alert on a 77.07 USD in_person purchase in billing region 444.0. Graph history shows 10 prior purchases in that region. Pattern is none; fraud probability 0.07. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
     "written_to_graph": true,
     "graph_case_id": "HHG-001"
   },
@@ -96,7 +114,7 @@
     {
       "type": "customer_validation",
       "asked_after_step": 4,
-      "assumed_response": "Customer confirms they made the 77.07 USD in-person purchase in billing region 444.0 and still have the card."
+      "assumed_response": "Customer confirms they made the 77.07 USD in_person purchase in billing region 444.0 and still have the card."
     }
   ],
   "next_best_actions": {
@@ -104,7 +122,7 @@
       {
         "action": "VERIFY_WITH_CUSTOMER",
         "route": "auto",
-        "reason": "R1: the alert is a single risk score of 0.61; verify before any block"
+        "reason": "R1: the alert is a single weak signal; verify before any block"
       },
       {
         "action": "CREATE_CASE",
@@ -119,7 +137,7 @@
         "reason": "R3: customer confirmed the transaction"
       }
     ],
-    "what_changed": "Customer confirmation dropped fraud probability to 0.12 and replaced verification with close as not fraud."
+    "what_changed": "Customer confirmation replaced verification with close as not fraud."
   },
   "sar": {
     "file": false,
@@ -132,5 +150,5 @@
   "stop_reason": "A verification response settled the question (confirm).",
   "tool_calls": 6,
   "tokens": 0,
-  "latency_s": 1.4
+  "latency_s": 0.0
 }

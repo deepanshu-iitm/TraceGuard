@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.12,
+    "fraud_probability": 0.1,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -750,6 +750,14 @@
         ]
       },
       {
+        "claim": "Billing region 126.0 appears on 9 other cards in the local 1-hop fan-out. Region sharing is recorded, not treated as proof of a shared origin.",
+        "source": "graph",
+        "ref": "query:region_fanout(r=126.0)",
+        "entity_ids": [
+          "C02354-K2"
+        ]
+      },
+      {
         "claim": "Customer denied the purchase and still has the card.",
         "source": "customer",
         "ref": "trigger:customer_report",
@@ -774,6 +782,12 @@
         "entity_ids": [
           "CC-0003"
         ]
+      },
+      {
+        "claim": "FinCEN suspicious activity report: A SAR narrative should identify the subject, the dates, the amount, the account or card, and why the activity is suspicious, written so a regulator can review the episode without the rest of the case file. Do not file when the customer confirmed a legitimate purchase.",
+        "source": "document",
+        "ref": "document:reg:fincen-sar",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
@@ -798,7 +812,7 @@
       "CC-5441",
       "CC-5558"
     ],
-    "summary": "HHG-018 is a customer_report alert on a 39.08 USD in_person purchase in billing region 126.0. Graph history shows 565 prior purchases in that region. Pattern is none; fraud probability 0.12. Verdict is legitimate.",
+    "summary": "HHG-018 is a customer_report alert on a 39.08 USD in_person purchase in billing region 126.0. Graph history shows 565 prior purchases in that region. Pattern is none; fraud probability 0.10. Episode size 0; exposure 0.00 USD. Verdict is legitimate.",
     "written_to_graph": true,
     "graph_case_id": "HHG-018"
   },
@@ -848,7 +862,7 @@
     "total_amount_usd": 0.0,
     "activity_dates": []
   },
-  "stop_reason": "Fraud probability 0.12 is supported by 2 independent pieces of evidence.",
+  "stop_reason": "Fraud probability 0.10 is supported by 2 independent pieces of evidence.",
   "tool_calls": 6,
   "tokens": 0,
   "latency_s": 0.0

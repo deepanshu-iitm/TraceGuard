@@ -3,16 +3,18 @@
   "case": {
     "status": "closed_fraud",
     "verdict": "fraud",
-    "fraud_probability": 0.58,
+    "fraud_probability": 0.47,
     "pattern": "card_not_present_fraud",
     "pattern_description": "",
     "affected_txn_ids": [
-      "3581141"
+      "3576079",
+      "3581141",
+      "3586980"
     ],
-    "first_suspicious_txn_id": "3581141",
+    "first_suspicious_txn_id": "3576079",
     "connected_card_ids": [],
     "connected_device_profiles": [],
-    "exposure_usd": 30.02,
+    "exposure_usd": 130.05,
     "evidence": [
       {
         "claim": "Flagged transaction 3581141 is a 30.02 USD online product-S purchase in billing region 203.0 on 2016-12-28 12:10:53. Card C08299-K1 is a visa credit owned by C08299.",
@@ -34,6 +36,32 @@
         ]
       },
       {
+        "claim": "Email domain gmail.com is present on the flagged purchase; email_fanout found 26 other cards, treated as too common for R6.",
+        "source": "graph",
+        "ref": "query:email_fanout(e=gmail.com)",
+        "entity_ids": [
+          "C08299-K1"
+        ]
+      },
+      {
+        "claim": "Billing region 203.0 appears on 5 other cards in the local 1-hop fan-out. Region sharing is recorded, not treated as proof of a shared origin.",
+        "source": "graph",
+        "ref": "query:region_fanout(r=203.0)",
+        "entity_ids": [
+          "C08299-K1"
+        ]
+      },
+      {
+        "claim": "Episode reconstruction grouped 3 transactions around 3581141 using history, device, amount outliers, and NEXT edges 3576079, 3586980.",
+        "source": "graph",
+        "ref": "query:next_chain(t=3581141)",
+        "entity_ids": [
+          "3576079",
+          "3581141",
+          "3586980"
+        ]
+      },
+      {
         "claim": "Customer denied the purchase and still has the card.",
         "source": "customer",
         "ref": "trigger:customer_report",
@@ -52,16 +80,22 @@
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-1293: Case CC-1293: cardholder C13171 reported unrecognized activity on card C13171-K2. 10 transaction(s) between 2016-07-22 and 2016-07-27 totaling $419.34 were confirmed fraudulent. Online purchases inconsistent with the cardholder's usual merchants and amounts. Online transactions came from a SM-A300H Build/LRX22G on chrome 63.0 for android. Card blocked and reissued. Customer reimbursed.",
+        "claim": "Closed case CC-1925: Case CC-1925: cardholder C13171 reported unrecognized activity on card C13171-K2. 3 transaction(s) between 2016-08-08 and 2016-08-08 totaling $120.30 were confirmed fraudulent. Online purchases inconsistent with the cardholder's usual merchants and amounts. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "document:closed_case/CC-1293",
+        "ref": "document:closed_case/CC-1925",
         "entity_ids": [
-          "CC-1293"
+          "CC-1925"
         ]
+      },
+      {
+        "claim": "FinCEN suspicious activity report: A SAR narrative should identify the subject, the dates, the amount, the account or card, and why the activity is suspicious, written so a regulator can review the episode without the rest of the case file. Do not file when the customer confirmed a legitimate purchase.",
+        "source": "document",
+        "ref": "document:reg:fincen-sar",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [],
-    "summary": "HHG-009 is a customer_report alert on a 30.02 USD online purchase in billing region 203.0. Graph history shows 1 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.58. Verdict is fraud.",
+    "summary": "HHG-009 is a customer_report alert on a 30.02 USD online purchase in billing region 203.0. Graph history shows 1 prior purchases in that region. Pattern is card_not_present_fraud; fraud probability 0.47. Episode size 3; exposure 130.05 USD. Verdict is fraud.",
     "written_to_graph": true,
     "graph_case_id": "HHG-009"
   },

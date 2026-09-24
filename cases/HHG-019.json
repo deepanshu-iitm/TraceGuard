@@ -3,18 +3,20 @@
   "case": {
     "status": "closed_fraud",
     "verdict": "fraud",
-    "fraud_probability": 0.74,
-    "pattern": "card_not_present_new_device",
-    "pattern_description": "",
+    "fraud_probability": 0.76,
+    "pattern": "account_takeover",
+    "pattern_description": "Online purchase 3503878 used a device not seen on this card, shortly after in-person activity. That mixed-channel shift is treated as stolen credentials rather than a stolen card number alone.",
     "affected_txn_ids": [
-      "3503878"
+      "3499109",
+      "3503878",
+      "3507926"
     ],
-    "first_suspicious_txn_id": "3503878",
+    "first_suspicious_txn_id": "3499109",
     "connected_card_ids": [],
     "connected_device_profiles": [
       "Windows | other | chrome 61.0 | 1280x720"
     ],
-    "exposure_usd": 99.92,
+    "exposure_usd": 252.7,
     "evidence": [
       {
         "claim": "Flagged transaction 3503878 is a 99.92 USD online product-R purchase in billing region 264.0 on 2016-12-01 17:28:53. Card C07987-K2 is a visa credit owned by C07987.",
@@ -64,30 +66,71 @@
         ]
       },
       {
+        "claim": "Device Windows | other | chrome 61.0 | 1280x720 made this purchase; shared_cards_on_device found no other payment cards on this profile.",
+        "source": "graph",
+        "ref": "query:shared_cards_on_device(d=Windows | other | chrome 61.0 | 1280x720)",
+        "entity_ids": [
+          "Windows | other | chrome 61.0 | 1280x720",
+          "C07987-K2"
+        ]
+      },
+      {
+        "claim": "Email domain gmail.com is present on the flagged purchase; email_fanout found 26 other cards, treated as too common for R6.",
+        "source": "graph",
+        "ref": "query:email_fanout(e=gmail.com)",
+        "entity_ids": [
+          "C07987-K2"
+        ]
+      },
+      {
+        "claim": "Billing region 264.0 appears on 17 other cards in the local 1-hop fan-out. Region sharing is recorded, not treated as proof of a shared origin.",
+        "source": "graph",
+        "ref": "query:region_fanout(r=264.0)",
+        "entity_ids": [
+          "C07987-K2"
+        ]
+      },
+      {
+        "claim": "Episode reconstruction grouped 3 transactions around 3503878 using history, device, amount outliers, and NEXT edges 3499109, 3507926.",
+        "source": "graph",
+        "ref": "query:next_chain(t=3503878)",
+        "entity_ids": [
+          "3499109",
+          "3503878",
+          "3507926"
+        ]
+      },
+      {
         "claim": "Customer denied the purchase and still has the card.",
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
       },
       {
-        "claim": "R2 Customer denies: When the customer denies the transaction, recommend BLOCK_CARD and CREATE_CASE. Add FILE_REPORT when exposure exceeds 1000 USD, a shared device is present, or another card's fraud is connected.",
+        "claim": "R6 Shared origin: Several cards with fraud associated with the same device profile, billing region, or recipient email: CREATE_CASE, FILE_REPORT, and MONITOR_CONNECTED_CARDS for every affected card.",
         "source": "document",
-        "ref": "document:policy:R2",
+        "ref": "document:policy:R6",
         "entity_ids": []
       },
       {
-        "claim": "Out-of-region use: Card-present activity in a billing region with no prior history, while normal home activity may continue. One new region is not automatically fraud; travel can look the same.",
+        "claim": "Account takeover: Mixed-channel behavior inconsistent with the cardholder, often with device and match-flag anomalies. Stolen credentials, not only a stolen card number.",
         "source": "document",
-        "ref": "document:pattern:out_of_region_use",
+        "ref": "document:pattern:account_takeover",
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-4743: Case CC-4743: model scored a $32.09 transaction at 0.96. Cardholder confirmed the purchase from a new phone. Device added to profile. Alert cleared.",
+        "claim": "Closed case CC-0255: Case CC-0255: cardholder C02354 reported unrecognized activity on card C02354-K2. 7 transaction(s) between 2016-07-06 and 2016-07-08 totaling $1,167.08 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Online transactions came from a iOS Device on mobile safari 10.0. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "document:closed_case/CC-4743",
+        "ref": "document:closed_case/CC-0255",
         "entity_ids": [
-          "CC-4743"
+          "CC-0255"
         ]
+      },
+      {
+        "claim": "FFIEC authentication guidance: FFIEC guidance expects layered authentication. A new device or credential change on an online purchase is a reason to step up authentication, not automatic proof of fraud.",
+        "source": "document",
+        "ref": "document:reg:ffiec-auth",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
@@ -96,7 +139,7 @@
       "CC-2860",
       "CC-5026"
     ],
-    "summary": "HHG-019 is a risk_score alert on a 99.92 USD online purchase in billing region 264.0. Graph history shows 5 prior purchases in that region. Pattern is card_not_present_new_device; fraud probability 0.74. Verdict is fraud.",
+    "summary": "HHG-019 is a risk_score alert on a 99.92 USD online purchase in billing region 264.0. Graph history shows 5 prior purchases in that region. Pattern is account_takeover; fraud probability 0.76. Episode size 3; exposure 252.70 USD. Verdict is fraud.",
     "written_to_graph": true,
     "graph_case_id": "HHG-019"
   },

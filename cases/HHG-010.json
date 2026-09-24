@@ -4,12 +4,14 @@
     "status": "closed_fraud",
     "verdict": "fraud",
     "fraud_probability": 0.74,
-    "pattern": "card_not_present_new_device",
-    "pattern_description": "",
+    "pattern": "account_takeover",
+    "pattern_description": "Online purchase 3506725 used a device not seen on this card, shortly after in-person activity. That mixed-channel shift is treated as stolen credentials rather than a stolen card number alone.",
     "affected_txn_ids": [
-      "3506725"
+      "3492086",
+      "3506725",
+      "3519858"
     ],
-    "first_suspicious_txn_id": "3506725",
+    "first_suspicious_txn_id": "3492086",
     "connected_card_ids": [
       "C02354-K2",
       "C07987-K2"
@@ -17,7 +19,7 @@
     "connected_device_profiles": [
       "Windows | Windows 10 | edge 16.0 | 1366x768"
     ],
-    "exposure_usd": 1000.03,
+    "exposure_usd": 1200.1,
     "evidence": [
       {
         "claim": "Flagged transaction 3506725 is a 1000.03 USD online product-R purchase in billing region 469.0 on 2016-12-02 15:18:27. Card C10434-K1 is a visa credit owned by C10434.",
@@ -71,36 +73,78 @@
         ]
       },
       {
+        "claim": "Device Windows | Windows 10 | edge 16.0 | 1366x768 is also linked to 2 other card(s): C02354-K2, C07987-K2.",
+        "source": "graph",
+        "ref": "query:shared_cards_on_device(d=Windows | Windows 10 | edge 16.0 | 1366x768)",
+        "entity_ids": [
+          "Windows | Windows 10 | edge 16.0 | 1366x768",
+          "C02354-K2",
+          "C07987-K2"
+        ]
+      },
+      {
+        "claim": "Email domain anonymous.com is present on the flagged purchase; email_fanout found 22 other cards, treated as too common for R6.",
+        "source": "graph",
+        "ref": "query:email_fanout(e=anonymous.com)",
+        "entity_ids": [
+          "C10434-K1"
+        ]
+      },
+      {
+        "claim": "Billing region 469.0 appears on 6 other cards in the local 1-hop fan-out. Region sharing is recorded, not treated as proof of a shared origin.",
+        "source": "graph",
+        "ref": "query:region_fanout(r=469.0)",
+        "entity_ids": [
+          "C10434-K1"
+        ]
+      },
+      {
+        "claim": "Episode reconstruction grouped 3 transactions around 3506725 using history, device, amount outliers, and NEXT edges 3492086, 3519858.",
+        "source": "graph",
+        "ref": "query:next_chain(t=3506725)",
+        "entity_ids": [
+          "3492086",
+          "3506725",
+          "3519858"
+        ]
+      },
+      {
         "claim": "Customer denied the purchase and still has the card.",
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
       },
       {
-        "claim": "R2 Customer denies: When the customer denies the transaction, recommend BLOCK_CARD and CREATE_CASE. Add FILE_REPORT when exposure exceeds 1000 USD, a shared device is present, or another card's fraud is connected.",
+        "claim": "R6 Shared origin: Several cards with fraud associated with the same device profile, billing region, or recipient email: CREATE_CASE, FILE_REPORT, and MONITOR_CONNECTED_CARDS for every affected card.",
         "source": "document",
-        "ref": "document:policy:R2",
+        "ref": "document:policy:R6",
         "entity_ids": []
       },
       {
-        "claim": "Card-not-present new device: Same as card-not-present fraud, but the identity record shows a device not previously seen on this account. Stronger evidence, not proof: legitimate customers also use new devices.",
+        "claim": "Account takeover: Mixed-channel behavior inconsistent with the cardholder, often with device and match-flag anomalies. Stolen credentials, not only a stolen card number.",
         "source": "document",
-        "ref": "document:pattern:card_not_present_new_device",
+        "ref": "document:pattern:account_takeover",
         "entity_ids": []
       },
       {
-        "claim": "Closed case CC-4743: Case CC-4743: model scored a $32.09 transaction at 0.96. Cardholder confirmed the purchase from a new phone. Device added to profile. Alert cleared.",
+        "claim": "Closed case CC-0255: Case CC-0255: cardholder C02354 reported unrecognized activity on card C02354-K2. 7 transaction(s) between 2016-07-06 and 2016-07-08 totaling $1,167.08 were confirmed fraudulent. Mixed-channel activity inconsistent with the cardholder; credentials and card data both used. Online transactions came from a iOS Device on mobile safari 10.0. Card blocked and reissued. Customer reimbursed.",
         "source": "document",
-        "ref": "document:closed_case/CC-4743",
+        "ref": "document:closed_case/CC-0255",
         "entity_ids": [
-          "CC-4743"
+          "CC-0255"
         ]
+      },
+      {
+        "claim": "FFIEC authentication guidance: FFIEC guidance expects layered authentication. A new device or credential change on an online purchase is a reason to step up authentication, not automatic proof of fraud.",
+        "source": "document",
+        "ref": "document:reg:ffiec-auth",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
       "CC-0873"
     ],
-    "summary": "HHG-010 is a risk_score alert on a 1000.03 USD online purchase in billing region 469.0. Graph history shows 24 prior purchases in that region. Pattern is card_not_present_new_device; fraud probability 0.74. Verdict is fraud.",
+    "summary": "HHG-010 is a risk_score alert on a 1000.03 USD online purchase in billing region 469.0. Graph history shows 24 prior purchases in that region. Pattern is account_takeover; fraud probability 0.74. Episode size 3; exposure 1200.10 USD. Verdict is fraud.",
     "written_to_graph": true,
     "graph_case_id": "HHG-010"
   },
@@ -146,15 +190,17 @@
   "sar": {
     "file": true,
     "reason": "R6: shared origin or high-exposure confirmed activity",
-    "narrative": "On 2016-12-02, card C10434-K1 belonging to customer C10434 was used for a 1000.03 USD online transaction 3506725 in billing region 469.0, country 87.0. The product code was R. Graph neighborhood review found this activity inconsistent with the cardholder's established pattern or linked it to a shared origin. The investigation treated the purchase as unauthorized. Connected cards on the same device profile, if any, are recommended for monitoring. The flagged card is recommended for restriction pending reissue. Total unauthorized amount: 1000.03 USD. This report is filed so a regulator can review the episode on its own.",
+    "narrative": "On 2016-11-27, card C10434-K1 belonging to customer C10434 was used for a 1000.03 USD online transaction 3506725 in billing region 469.0, country 87.0. The product code was R. Episode reconstruction identified 3 related transaction(s) totaling 1200.10 USD from 2016-11-27 to 2016-12-06. Graph neighborhood review found this activity inconsistent with the cardholder's established pattern or linked it to a shared origin, email cluster, or mixed-channel takeover. Online purchase 3506725 used a device not seen on this card, shortly after in-person activity. That mixed-channel shift is treated as stolen credentials rather than a stolen card number alone. The investigation treated the purchase as unauthorized. Connected cards recommended for monitoring: C02354-K2, C07987-K2. The flagged card is recommended for restriction pending reissue. Total unauthorized amount: 1200.10 USD. This report is filed so a regulator can review the episode on its own.",
     "subjects": [
       "C10434",
-      "C10434-K1"
+      "C10434-K1",
+      "C02354-K2",
+      "C07987-K2"
     ],
-    "total_amount_usd": 1000.03,
+    "total_amount_usd": 1200.1,
     "activity_dates": [
-      "2016-12-02",
-      "2016-12-02"
+      "2016-11-27",
+      "2016-12-06"
     ]
   },
   "stop_reason": "A verification response settled the question (deny).",
