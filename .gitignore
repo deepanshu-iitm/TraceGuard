@@ -15,4 +15,7 @@ data/identity.csv
 data/closed_cases_history.csv
 data/raw/*.csv
 data/processed/*.csv
-config.bat
+
+.env
+.env.*
+.vscode/
